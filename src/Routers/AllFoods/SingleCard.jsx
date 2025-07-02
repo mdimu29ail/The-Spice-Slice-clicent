@@ -21,12 +21,24 @@ const SingleCard = ({ food }) => {
               Price : ${food.price_usd}
             </div>
 
-            <div className="px-5 py-2 flex items-center gap-2 border-b-2 rounded-2xl">
+            {/* <div className="px-5 py-2 flex items-center gap-2 border-b-2 rounded-2xl">
               <GiRoundStar color="#FFD700" />
               {food.rating}
+            </div> */}
+            <div className="px-5 py-2 border-b-2 rounded-2xl  ">
+              <span className="font-bold">Available:</span>{' '}
+              <span
+                className={
+                  parseInt(food.quantity) > 0
+                    ? 'text-green-400'
+                    : 'text-red-400'
+                }
+              >
+                {parseInt(food.quantity) > 0 ? 'available ' : 'not available'}
+              </span>
             </div>
           </div>
-
+          {/* 
           <div className="card-actions justify-between">
             <div className="px-5 py-2 border-b-2 rounded-2xl  ">
               <span className="font-bold">Available:</span>{' '}
@@ -44,7 +56,7 @@ const SingleCard = ({ food }) => {
             <div className="px-5 py-2 border-b-2 rounded-2xl">
               <span className="font-bold">Quantity :</span> {food.quantity}
             </div>
-          </div>
+          </div> */}
 
           <div className="my-3">
             <Link to={`/foods/${food._id}`}>

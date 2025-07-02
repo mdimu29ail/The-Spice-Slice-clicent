@@ -124,13 +124,6 @@ const MyFoods = () => {
                         </p>
                       </div>
                       <div className="flex items-center w-full px-5 py-2 border-b-2 rounded-2xl">
-                        <span className="mr-2 ">⭐</span>
-                        <p>
-                          <span className="font-semibold ">Rating:</span>{' '}
-                          {food.rating}
-                        </p>
-                      </div>
-                      <div className="flex items-center w-full px-5 py-2 border-b-2 rounded-2xl">
                         <span className="mr-2 ">✅</span>
                         <p>
                           <span className="font-semibold">Available:</span>{' '}
@@ -145,17 +138,9 @@ const MyFoods = () => {
                           </span>
                         </p>
                       </div>
-
-                      <div className="flex items-center w-full px-5 py-2 border-b-2 rounded-2xl">
-                        <span className="mr-2 ">👤</span> {/* Person icon */}
-                        <p>
-                          <span className="font-semibold ">Seller:</span>{' '}
-                          {food.createdBy || 'Unknown'}
-                        </p>
-                      </div>
                     </div>
                     {/* Food Quantity and Purchase Count in a flex container */}
-                    <div className="flex justify-between items-center  mt-4 ">
+                    {/* <div className="flex justify-between items-center  mt-4 ">
                       <p className="w-full px-3 py-2 border-b-2 rounded-2xl">
                         <span className="font-semibold ">Food Quantity:</span>{' '}
                         {food.quantity ?? 'N/A'}
@@ -164,7 +149,7 @@ const MyFoods = () => {
                         <span className="font-semibold ">Purchase Count:</span>{' '}
                         {food.purchase_count ?? 0}
                       </p>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Buttons at the bottom */}
