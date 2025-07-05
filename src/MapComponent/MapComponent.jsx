@@ -20,9 +20,9 @@ const MapComponent = () => {
   const initialZoom = 13;
 
   return (
-    <div className="flex flex-col md:flex-row lg:flex-row items-center  ">
+    <div className="flex flex-col md:flex-row lg:flex-row items-center -z-40 ">
       <div className="flex flex-col items-center p-8 w-full">
-        <div className="w-full max-w-4xl h-[500px] rounded-lg shadow-xl overflow-hidden ">
+        <div className="w-full max-w-4xl h-[500px] rounded-lg shadow-xl overflow-hidden -z-50">
           <MapContainer
             center={position}
             zoom={initialZoom}

@@ -6,7 +6,7 @@ const Card = ({ food }) => {
   return (
     <div className="flex justify-center">
       <div className="card w-80 md:w-96 lg:w-96">
-        <figure className="h-60">
+        <figure className="h-40">
           <img className=" bg-cover" src={food.image_url} alt="Shoes" />
         </figure>
         <div className="card-body rounded-lg shadow-2xl overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-2xl animate-fadeInUp flex flex-col">
