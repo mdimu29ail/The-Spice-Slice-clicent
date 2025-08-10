@@ -29,7 +29,7 @@ const ShowAllFoods = ({ foodsPromise }) => {
       </div>
 
       {/* 🧾 Food Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
         {displayedFoods.length > 0 ? (
           displayedFoods.map(food => <SingleCard key={food._id} food={food} />)
         ) : (
