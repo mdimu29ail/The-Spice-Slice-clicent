@@ -14,7 +14,7 @@ const MainSection = ({ foodsPromise }) => {
 
   const displayedFoods = showAllFoods
     ? foodsWithHighPurchaseCount
-    : foodsWithHighPurchaseCount.slice(0, 6);
+    : foodsWithHighPurchaseCount.slice(0, 8);
 
   const handleToggleShowAll = () => {
     setShowAllFoods(!showAllFoods);
@@ -34,7 +34,7 @@ const MainSection = ({ foodsPromise }) => {
         </div>
 
         <div className="flex justify-center items-center">
-          {foodsWithHighPurchaseCount.length > 6 && (
+          {foodsWithHighPurchaseCount.length > 8 && (
             <div className="mt-8 mb-12">
               <button
                 onClick={handleToggleShowAll}
@@ -42,7 +42,7 @@ const MainSection = ({ foodsPromise }) => {
               >
                 {showAllFoods
                   ? 'Show Less'
-                  : `See All (${foodsWithHighPurchaseCount.length - 6} more)`}
+                  : `See All (${foodsWithHighPurchaseCount.length - 8} more)`}
               </button>
             </div>
           )}

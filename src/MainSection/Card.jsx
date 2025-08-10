@@ -10,14 +10,14 @@ const Card = ({ food }) => {
           <img className=" bg-cover" src={food.image_url} alt="Shoes" />
         </figure>
         <div className="card-body rounded-lg shadow-2xl overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-2xl animate-fadeInUp flex flex-col">
-          <h2 className="px-5 py-2 border-b-2 rounded-2xl text-2xl flex justify-between">
+          <h2 className="px-2 py-2 border-b-2 rounded-2xl text-2xl flex justify-between">
             {food.name}{' '}
           </h2>
 
           {/* <p className="px-5 py-2 border-b-2 rounded-2xl">{food.cuisine}</p> */}
 
           <div className="card-actions justify-between flex">
-            <div className="px-5 py-2 border-b-2 rounded-2xl ">
+            <div className="px-2 py-2 border-b-2 rounded-2xl ">
               Price : ${food.price_usd}
             </div>
 
