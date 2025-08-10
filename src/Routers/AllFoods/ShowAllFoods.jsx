@@ -14,7 +14,7 @@ const ShowAllFoods = ({ foodsPromise }) => {
 
   const displayedFoods = showAllFoods
     ? filteredFoods
-    : filteredFoods.slice(0, 6);
+    : filteredFoods.slice(0, 8);
 
   const handleToggleShowAll = () => {
     setShowAllFoods(!showAllFoods);

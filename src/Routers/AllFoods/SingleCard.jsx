@@ -14,7 +14,7 @@ const SingleCard = ({ food }) => {
             {food.name}{' '}
           </h2>
 
-          <p className="px-5 py-2 border-b-2 rounded-2xl">{food.cuisine}</p>
+          {/* <p className="px-5 py-2 border-b-2 rounded-2xl">{food.cuisine}</p> */}
 
           <div className="card-actions justify-between flex">
             <div className="px-5 py-2 border-b-2 rounded-2xl ">

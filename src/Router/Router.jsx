@@ -14,6 +14,9 @@ import Table from '../MainSection/Table';
 import Update from '../Routers/Update/Update';
 import Details from '../MainSection/Details';
 import GalleryPage from '../Routers/GalleryPage/GalleryPage';
+import Dashboard from '../Dashboard/Dashboard';
+import DashbordLayout from '../Layout/DashbordLayout';
+import ProfileCard from '../Routers/Profile';
 
 const router = createBrowserRouter([
   {
@@ -34,14 +37,6 @@ const router = createBrowserRouter([
         path: '/register',
         element: <Register></Register>,
       },
-      {
-        path: 'addFoods',
-        element: (
-          <PrivateRouter>
-            <AddFoods></AddFoods>
-          </PrivateRouter>
-        ),
-      },
 
       {
         path: '/foods/:id',
@@ -56,22 +51,7 @@ const router = createBrowserRouter([
         path: '/update/:id',
         element: <Update></Update>,
       },
-      {
-        path: '/orderNow/:id',
-        element: (
-          <PrivateRouter>
-            <OrderNow></OrderNow>
-          </PrivateRouter>
-        ),
-      },
-      {
-        path: '/purchaseList',
-        element: (
-          <PrivateRouter>
-            <PurchaseList></PurchaseList>
-          </PrivateRouter>
-        ),
-      },
+
       {
         path: '/applications/:id',
         element: (
@@ -84,11 +64,15 @@ const router = createBrowserRouter([
             `https://my-assignment-11-server-lac.vercel.app/applications/${params.id}`
           ),
       },
-
       {
-        path: '/myFoods',
-        element: <MyFoods></MyFoods>,
+        path: '/orderNow/:id',
+        element: (
+          <PrivateRouter>
+            <OrderNow></OrderNow>
+          </PrivateRouter>
+        ),
       },
+
       {
         path: '/allFoods',
         element: <AllFoods></AllFoods>,
@@ -96,6 +80,49 @@ const router = createBrowserRouter([
       {
         path: '/gallery',
         element: <GalleryPage></GalleryPage>,
+      },
+    ],
+  },
+
+  {
+    path: '/dashboard',
+    element: <DashbordLayout></DashbordLayout>,
+    children: [
+      {
+        index: true,
+        element: (
+          <PrivateRouter>
+            <Dashboard></Dashboard>
+          </PrivateRouter>
+        ),
+      },
+      {
+        path: '/dashboard/addFoods',
+        element: (
+          <PrivateRouter>
+            <AddFoods></AddFoods>
+          </PrivateRouter>
+        ),
+      },
+      {
+        path: '/dashboard/myFoods',
+        element: <MyFoods></MyFoods>,
+      },
+      {
+        path: '/dashboard/purchaseList',
+        element: (
+          <PrivateRouter>
+            <PurchaseList></PurchaseList>
+          </PrivateRouter>
+        ),
+      },
+      {
+        path: '/dashboard/profile',
+        element: (
+          <PrivateRouter>
+            <ProfileCard></ProfileCard>
+          </PrivateRouter>
+        ),
       },
     ],
   },

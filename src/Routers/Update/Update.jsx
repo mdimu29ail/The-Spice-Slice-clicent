@@ -48,7 +48,7 @@ const Update = () => {
             timer: 1500,
             showConfirmButton: false,
           });
-          navigate('/myFoods');
+          navigate('/dashboard/myFoods');
         } else {
           Swal.fire({
             icon: 'info',

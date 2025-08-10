@@ -171,40 +171,14 @@ const NavBar = () => {
             >
               <li className="py-2">
                 <NavLink
-                  to="/addFoods"
+                  to="/dashboard"
                   className={({ isActive }) =>
                     isActive
                       ? 'text-green-600 font-bold border-b-2 border-green-600 rounded-2xl'
                       : ' hover:text-green-400 border-b-2  rounded-2xl'
                   }
                 >
-                  Add Foods Page
-                </NavLink>
-              </li>
-
-              <li className="py-2">
-                <NavLink
-                  to="/myFoods"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'text-green-600 font-bold border-b-2 border-green-600 rounded-2xl'
-                      : ' hover:text-green-400 border-b-2  rounded-2xl'
-                  }
-                >
-                  My Foods Page
-                </NavLink>
-              </li>
-
-              <li className="py-2">
-                <NavLink
-                  to="/purchaseList"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'text-green-600 font-bold border-b-2 border-green-600 rounded-2xl'
-                      : ' hover:text-green-400 border-b-2  rounded-2xl'
-                  }
-                >
-                  My Orders
+                  dashboard
                 </NavLink>
               </li>
 
