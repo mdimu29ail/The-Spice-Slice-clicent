@@ -14,7 +14,7 @@ const MainSection = ({ foodsPromise }) => {
 
   const displayedFoods = showAllFoods
     ? foodsWithHighPurchaseCount
-    : foodsWithHighPurchaseCount.slice(0, 8);
+    : foodsWithHighPurchaseCount.slice(0, 6);
 
   const handleToggleShowAll = () => {
     setShowAllFoods(!showAllFoods);
@@ -27,7 +27,7 @@ const MainSection = ({ foodsPromise }) => {
           <h2 className="text-4xl text-center font-bold">Top Foods</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 justify-center">
           {displayedFoods.map(food => (
             <Card key={food._id} food={food} />
           ))}
@@ -42,7 +42,7 @@ const MainSection = ({ foodsPromise }) => {
               >
                 {showAllFoods
                   ? 'Show Less'
-                  : `See All (${foodsWithHighPurchaseCount.length - 8} more)`}
+                  : `See All (${foodsWithHighPurchaseCount.length - 6} more)`}
               </button>
             </div>
           )}
