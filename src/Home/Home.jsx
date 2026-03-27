@@ -6,7 +6,7 @@ import MapComponent from '../MapComponent/MapComponent';
 import MenuSection from '../MenuSection/MenuSection';
 import ChefsSection from '../ChefsSection/ChefsSection';
 const foodsPromise = fetch(
-  'https://my-assignment-11-server-lac.vercel.app/foods'
+  'https://spice-slice-server-lac.vercel.app/foods',
 ).then(res => res.json());
 const Home = () => {
   return (

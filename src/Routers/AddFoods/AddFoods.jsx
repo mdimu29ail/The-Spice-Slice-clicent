@@ -24,8 +24,8 @@ const AddFoods = () => {
 
     try {
       const res = await axios.post(
-        'https://my-assignment-11-server-lac.vercel.app/foods',
-        newFood
+        'https://spice-slice-server-lac.vercel.app/foods',
+        newFood,
       );
       if (res.data.insertedId) {
         Swal.fire({

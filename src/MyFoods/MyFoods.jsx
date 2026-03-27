@@ -14,9 +14,7 @@ const MyFoods = () => {
 
     setLoading(true);
 
-    fetch(
-      `https://my-assignment-11-server-lac.vercel.app/foods?email=${user.email}`
-    )
+    fetch(`https://spice-slice-server-lac.vercel.app/foods?email=${user.email}`)
       .then(res => res.json())
       .then(data => {
         const filtered = data.filter(food => food.createdBy === user.email);
@@ -41,7 +39,7 @@ const MyFoods = () => {
     }).then(result => {
       if (!result.isConfirmed) return;
 
-      fetch(`https://my-assignment-11-server-lac.vercel.app/foods/${id}`, {
+      fetch(`https://spice-slice-server-lac.vercel.app/foods/${id}`, {
         method: 'DELETE',
       })
         .then(res => res.json())

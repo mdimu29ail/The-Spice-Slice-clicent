@@ -10,7 +10,7 @@ const Update = () => {
 
   useEffect(() => {
     axios
-      .get(`https://my-assignment-11-server-lac.vercel.app/foods/${id}`)
+      .get(`https://spice-slice-server-lac.vercel.app/foods/${id}`)
       .then(res => setFoodData(res.data))
       .catch(() => {
         Swal.fire({
@@ -37,8 +37,8 @@ const Update = () => {
 
     axios
       .patch(
-        `https://my-assignment-11-server-lac.vercel.app/foods/${id}`,
-        updatedFood
+        `https://spice-slice-server-lac.vercel.app/foods/${id}`,
+        updatedFood,
       )
       .then(res => {
         if (res.data.modifiedCount > 0) {

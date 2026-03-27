@@ -42,9 +42,7 @@ const router = createBrowserRouter([
         path: '/foods/:id',
         element: <Details></Details>,
         loader: ({ params }) =>
-          fetch(
-            `https://my-assignment-11-server-lac.vercel.app/foods/${params.id}`
-          ),
+          fetch(`https://spice-slice-server-lac.vercel.app/foods/${params.id}`),
       },
 
       {
@@ -61,7 +59,7 @@ const router = createBrowserRouter([
         ),
         loader: ({ params }) =>
           fetch(
-            `https://my-assignment-11-server-lac.vercel.app/applications/${params.id}`
+            `https://spice-slice-server-lac.vercel.app/applications/${params.id}`,
           ),
       },
       {

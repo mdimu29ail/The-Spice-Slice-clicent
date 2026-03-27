@@ -45,13 +45,9 @@ const AuthProvider = ({ children }) => {
       if (currentUser?.email) {
         const userData = { email: currentUser.email };
         axios
-          .post(
-            'https://my-assignment-11-server-lac.vercel.app/jwt',
-            userData,
-            {
-              withCredentials: true,
-            }
-          )
+          .post('https://spice-slice-server-lac.vercel.app/jwt', userData, {
+            withCredentials: true,
+          })
           .then(res => console.log('token', res.data))
           .catch(err => {
             console.log(err);

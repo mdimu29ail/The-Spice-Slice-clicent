@@ -19,10 +19,9 @@ const Table = ({ myApplicationPromise }) => {
     }).then(result => {
       if (!result.isConfirmed) return;
 
-      fetch(
-        `https://my-assignment-11-server-lac.vercel.app/applications/${id}`,
-        { method: 'DELETE' }
-      )
+      fetch(`https://spice-slice-server-lac.vercel.app/applications/${id}`, {
+        method: 'DELETE',
+      })
         .then(res => res.json())
         .then(data => {
           if (data.deletedCount > 0) {

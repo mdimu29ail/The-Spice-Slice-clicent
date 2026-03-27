@@ -44,8 +44,8 @@ const OrderNow = () => {
 
     try {
       const res = await axios.post(
-        'https://my-assignment-11-server-lac.vercel.app/applications',
-        application
+        'https://spice-slice-server-lac.vercel.app/applications',
+        application,
       );
       if (res.data.insertedId) {
         Swal.fire({
