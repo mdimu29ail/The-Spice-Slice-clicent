@@ -1,52 +1,53 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react';
+import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
-  UtensilsCrossed,
+  Utensils,
   ShoppingBag,
-  UserCircle,
-  Home,
+  Users,
+  BarChart3,
   LogOut,
   Menu,
   X,
+  PlusCircle,
+  ChevronLeft,
+  ChevronRight,
   Bell,
   Search,
-  Zap,
-  History,
+  Home,
   Sparkles,
   RefreshCw,
   Trash2,
+  CreditCard,
+  MapPin,
 } from 'lucide-react';
 import { AuthContext } from '../Auth/AuthContext';
 import { supabase } from '../supabase/supabaseClient';
 import Swal from 'sweetalert2';
 
-const DashboardLayout = () => {
-  const { user, loading, logOut } = useContext(AuthContext);
+const AdminLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
+  const { logOut, user } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const navigate = useNavigate();
 
-  // স্ক্রিন সাইজ পরিবর্তন হলে সাইডবার অটো অ্যাডজাস্ট হবে
+  // রেসপনসিভ সাইডবার লজিক
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 1024) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
+      if (window.innerWidth <= 1024) setSidebarOpen(false);
+      else setSidebarOpen(true);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- ১. প্রোফাইল ডাটা ফেচিং ---
+  // --- ১. প্রোফাইল ডাটা সিঙ্ক ---
   useEffect(() => {
     if (!user?.id) return;
-    const fetchProfile = async () => {
+    const fetchAdminProfile = async () => {
       const { data } = await supabase
         .from('profiles')
         .select('*')
@@ -54,25 +55,40 @@ const DashboardLayout = () => {
         .single();
       if (data) setProfile(data);
     };
-    fetchProfile();
+    fetchAdminProfile();
+
+    const profileSubscription = supabase
+      .channel('admin-profile-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        payload => {
+          setProfile(payload.new);
+        },
+      )
+      .subscribe();
+    return () => supabase.removeChannel(profileSubscription);
   }, [user?.id]);
 
-  // --- ২. নোটিফিকেশন ফেচিং ---
-  const fetchNotifications = async () => {
-    if (!user?.id) return;
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*, hidden_notifications!left(user_id)')
-      .is('hidden_notifications.user_id', null)
-      .order('created_at', { ascending: false })
-      .limit(15);
-    if (!error) setNotifications(data);
-  };
-
+  // --- ২. রিয়েল-টাইম নোটিফিকেশন ---
   useEffect(() => {
-    fetchNotifications();
-    const channel = supabase
-      .channel('db-notifications')
+    const fetchInitialNotifs = async () => {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*, hidden_notifications!left(user_id)')
+        .is('hidden_notifications.user_id', null)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (data) setNotifications(data);
+    };
+    fetchInitialNotifs();
+    const notifChannel = supabase
+      .channel('admin-db-notifs')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
@@ -81,68 +97,75 @@ const DashboardLayout = () => {
         },
       )
       .subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => supabase.removeChannel(notifChannel);
   }, [user?.id]);
 
-  const handleHideNotification = async notifId => {
+  const handleHideNotif = async id => {
     const { error } = await supabase
       .from('hidden_notifications')
-      .insert([{ user_id: user.id, notification_id: notifId }]);
-    if (!error) setNotifications(prev => prev.filter(n => n.id !== notifId));
+      .insert([{ user_id: user.id, notification_id: id }]);
+    if (!error) setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const handleSignOut = async () => {
+  // --- ৩. ফিক্সড লগআউট ফাংশন (With Confirmation) ---
+  const handleLogout = async () => {
     const result = await Swal.fire({
-      title: 'Wait, Patron!',
-      text: 'Are you sure you want to leave the boutique?',
-      icon: 'question',
+      title: 'Signing Out?',
+      text: 'Are you sure you want to leave the executive suite?',
+      icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#E65100',
       cancelButtonColor: '#1a1a1a',
-      confirmButtonText: 'Yes, Sign Out',
+      confirmButtonText: 'Yes, Logout',
       background: '#fcf9f5',
-      customClass: { popup: 'rounded-[2.5rem]' },
+      customClass: { popup: 'rounded-[3rem] border border-black/5 shadow-2xl' },
     });
+
     if (result.isConfirmed) {
       await logOut();
-      navigate('/');
+      navigate('/login');
     }
   };
 
-  const userLinks = [
+  const menuItems = [
+    { name: 'Overview', path: '/admin', icon: <LayoutDashboard size={20} /> },
     {
-      name: 'Overview',
-      path: '/dashboard',
-      icon: <LayoutDashboard size={20} />,
-      end: true,
+      name: 'Add Food',
+      path: '/admin/add-food',
+      icon: <PlusCircle size={20} />,
     },
     {
-      name: 'My Creations',
-      path: '/dashboard/myFoods',
-      icon: <UtensilsCrossed size={20} />,
+      name: 'Add Reviews',
+      path: '/admin/add-review',
+      icon: <PlusCircle size={20} />,
     },
     {
-      name: 'Order Status',
-      path: '/dashboard/purchaseList',
+      name: 'Manage Foods',
+      path: '/admin/manage-foods',
+      icon: <Utensils size={20} />,
+    },
+    {
+      name: 'Orders Control',
+      path: '/admin/manage-orders',
       icon: <ShoppingBag size={20} />,
     },
     {
-      name: 'The Ledger',
-      path: '/dashboard/transactions',
-      icon: <History size={20} />,
+      name: 'Payments',
+      path: '/admin/payments',
+      icon: <CreditCard size={20} />,
     },
+    { name: 'Patrons', path: '/admin/users', icon: <Users size={20} /> },
+    { name: 'Analytics', path: '/admin/stats', icon: <BarChart3 size={20} /> },
     {
-      name: 'Profile Settings',
-      path: '/dashboard/profile',
-      icon: <UserCircle size={20} />,
+      name: 'Manage Location',
+      path: '/admin/manage-location',
+      icon: <MapPin size={20} />,
     },
   ];
 
-  if (loading) return null;
-
   return (
     <div className="flex min-h-screen bg-[#fcf9f5] font-sans selection:bg-orange-100 relative">
-      {/* --- MOBILE OVERLAY (Backdrop) --- */}
+      {/* --- MOBILE OVERLAY --- */}
       <AnimatePresence>
         {isSidebarOpen && window.innerWidth <= 1024 && (
           <motion.div
@@ -163,29 +186,25 @@ const DashboardLayout = () => {
           x: window.innerWidth <= 1024 && !isSidebarOpen ? -300 : 0,
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className={`fixed h-[96vh] top-[2vh] left-4 bg-[#1a1a1a] rounded-[3rem] shadow-2xl z-[60] flex flex-col p-6 border border-white/5 overflow-hidden`}
+        className="fixed h-[96vh] top-[2vh] left-4 bg-[#1a1a1a] rounded-[3rem] shadow-2xl z-[60] flex flex-col p-6 border border-white/5 overflow-hidden"
       >
         <div className="flex items-center gap-3 mb-12 px-2">
           <div className="w-11 h-11 bg-[#E65100] rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
-            <img
-              src="https://i.ibb.co/MxBvKxGY/Chat-GPT-Image-AM.png"
-              className="w-7 brightness-200"
-              alt="logo"
-            />
+            <Utensils className="text-white" size={20} />
           </div>
           {isSidebarOpen && (
             <span className="text-white font-black tracking-tighter uppercase text-xl italic">
-              Patron<span className="text-[#E65100] not-italic">.</span>
+              Admin<span className="text-[#E65100] not-italic">.</span>
             </span>
           )}
         </div>
 
-        <nav className="flex-1 space-y-2">
-          {userLinks.map(item => (
+        <nav className="flex-1 space-y-2 overflow-y-auto no-scrollbar">
+          {menuItems.map(item => (
             <NavLink
               key={item.name}
               to={item.path}
-              end={item.end}
+              end={item.path === '/admin'}
               onClick={() => window.innerWidth <= 1024 && setSidebarOpen(false)}
               className={({ isActive }) =>
                 `relative group flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${isActive ? 'text-white bg-white/10' : 'text-gray-500 hover:text-white'}`
@@ -205,7 +224,7 @@ const DashboardLayout = () => {
                   )}
                   {isActive && (
                     <motion.div
-                      layoutId="patron-pill"
+                      layoutId="admin-pill"
                       className="absolute inset-0 bg-white/5 rounded-2xl -z-10"
                     />
                   )}
@@ -215,7 +234,7 @@ const DashboardLayout = () => {
           ))}
         </nav>
 
-        {/* --- BACK TO HOME BUTTON --- */}
+        {/* --- SIDEBAR FOOTER (Back to Home & Logout) --- */}
         <div className="mt-auto space-y-2 border-t border-white/5 pt-6">
           <Link
             to="/"
@@ -233,7 +252,7 @@ const DashboardLayout = () => {
           </Link>
 
           <button
-            onClick={handleSignOut}
+            onClick={handleLogout}
             className="flex items-center gap-4 p-4 text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all w-full"
           >
             <LogOut size={20} className="shrink-0" />
@@ -246,7 +265,7 @@ const DashboardLayout = () => {
         </div>
       </motion.aside>
 
-      {/* --- MAIN AREA --- */}
+      {/* --- MAIN CONTENT AREA --- */}
       <div
         className={`flex-1 flex flex-col transition-all duration-500 ${isSidebarOpen && window.innerWidth > 1024 ? 'lg:ml-[310px]' : 'lg:ml-[115px]'}`}
       >
@@ -264,19 +283,19 @@ const DashboardLayout = () => {
             </button>
             <div className="hidden md:flex items-center gap-3 bg-white border border-black/5 px-6 py-3 rounded-2xl shadow-sm w-80 group focus-within:border-[#E65100]/30 transition-all">
               <Search
-                size={16}
+                size={18}
                 className="text-gray-300 group-focus-within:text-[#E65100]"
               />
               <input
                 type="text"
-                placeholder="Search Vault..."
-                className="bg-transparent outline-none text-[10px] font-black uppercase tracking-widest w-full"
+                placeholder="Search Boutique Data..."
+                className="bg-transparent outline-none text-xs font-bold uppercase tracking-widest w-full placeholder:text-gray-300"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4 lg:gap-8">
-            {/* Notification Bell Logic (Same as before) */}
+            {/* Notification Bell (Same as before) */}
             <div className="relative">
               <button
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
@@ -284,99 +303,101 @@ const DashboardLayout = () => {
               >
                 <Bell size={20} />
                 {notifications.length > 0 && (
-                  <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full ring-2 ring-[#fcf9f5] animate-bounce" />
+                  <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white animate-bounce" />
                 )}
               </button>
-              {/* Notification Dropdown (Same as before) */}
               <AnimatePresence>
                 {isNotifOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 15 }}
-                    className="absolute right-0 mt-4 w-80 bg-white border border-black/5 rounded-[2.5rem] shadow-2xl p-6 z-[100]"
+                    className="absolute right-0 mt-4 w-80 bg-white border border-black/5 rounded-[2rem] shadow-2xl p-6 z-[100]"
                   >
                     <div className="flex justify-between items-center mb-6">
                       <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1a1a1a]">
-                        Boutique Alerts
+                        System Alerts
                       </h4>
-                      <button
-                        onClick={() => setNotifications([])}
-                        className="p-2 text-gray-300 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <span className="text-[8px] font-bold text-gray-400 uppercase">
+                        {notifications.length} New
+                      </span>
                     </div>
                     <div className="space-y-4 max-h-80 overflow-y-auto no-scrollbar">
-                      {notifications.map(notif => (
-                        <div
-                          key={notif.id}
-                          className="flex gap-4 p-3 hover:bg-[#fcf9f5] rounded-2xl transition-all border-b border-black/[0.03] last:border-0 group/item"
-                        >
+                      {notifications.length > 0 ? (
+                        notifications.map(notif => (
                           <div
-                            className={`p-2 rounded-xl shrink-0 ${notif.type === 'ADD' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}
+                            key={notif.id}
+                            className="flex gap-4 p-3 hover:bg-[#fcf9f5] rounded-2xl transition-all border-b border-black/[0.03] last:border-0 group/item"
                           >
-                            {notif.type === 'ADD' ? (
-                              <Sparkles size={14} />
-                            ) : (
-                              <RefreshCw size={14} />
-                            )}
+                            <div
+                              className={`p-2 rounded-xl shrink-0 ${notif.type === 'ADD' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}
+                            >
+                              {notif.type === 'ADD' ? (
+                                <Sparkles size={14} />
+                              ) : (
+                                <RefreshCw size={14} />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-[10px] font-bold text-[#1a1a1a] leading-tight mb-1">
+                                {notif.message}
+                              </p>
+                              <p className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">
+                                {new Date(
+                                  notif.created_at,
+                                ).toLocaleTimeString()}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleHideNotif(notif.id)}
+                              className="opacity-0 group-hover/item:opacity-100 p-1 text-gray-300 hover:text-red-500 transition-all"
+                            >
+                              <X size={14} />
+                            </button>
                           </div>
-                          <div className="flex-1">
-                            <p className="text-[10px] font-bold text-[#1a1a1a] leading-tight mb-1">
-                              {notif.message}
-                            </p>
-                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">
-                              {new Date(notif.created_at).toLocaleTimeString()}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => handleHideNotification(notif.id)}
-                            className="opacity-0 group-hover/item:opacity-100 p-1 text-gray-300 hover:text-red-500 transition-all"
-                          >
-                            <X size={14} />
-                          </button>
+                        ))
+                      ) : (
+                        <div className="py-10 text-center opacity-20">
+                          <Bell size={40} className="mx-auto mb-2" />
+                          <p className="text-[10px] font-black uppercase tracking-widest">
+                            No Alerts
+                          </p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <div className="h-10 w-[1px] bg-black/5 hidden sm:block" />
+            <div className="h-10 w-[1px] bg-black/5" />
 
-            {/* Profile Info */}
+            {/* Dynamic Profile Info */}
             <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
-                <div className="flex items-center justify-end gap-1 text-[#E65100] mb-0.5">
-                  <Zap size={10} fill="currentColor" />
-                  <p className="text-[9px] font-black uppercase tracking-tighter">
-                    Verified Patron
-                  </p>
-                </div>
-                <p className="text-sm font-black text-[#1a1a1a] uppercase tracking-tighter leading-none">
-                  {profile?.full_name ||
-                    user?.displayName ||
-                    'Authentic Patron'}
+              <div className="text-right hidden md:block">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">
+                  Chief Administrator
+                </p>
+                <p className="text-sm font-black text-[#1a1a1a] uppercase">
+                  {profile?.full_name || user?.displayName || 'Admin'}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-[1.2rem] border-2 border-[#E65100]/20 p-1 bg-white shadow-xl overflow-hidden group">
+              <div className="w-12 h-12 rounded-2xl border-2 border-orange-500/20 p-1 bg-white shadow-sm overflow-hidden group">
                 <img
                   src={
                     profile?.avatar_url ||
                     user?.photoURL ||
-                    'https://i.pravatar.cc/150'
+                    'https://i.pravatar.cc/150?img=33'
                   }
-                  className="w-full h-full object-cover rounded-lg group-hover:scale-110 transition-transform duration-500"
-                  alt="avatar"
+                  className="w-full h-full object-cover rounded-xl group-hover:scale-110 transition-transform duration-500"
+                  alt="admin"
                 />
               </div>
             </div>
           </div>
         </header>
 
-        <main className="p-6 lg:p-10 pt-2 lg:pt-0">
+        <main className="p-6 lg:p-10 pt-4">
           <Outlet />
         </main>
       </div>
@@ -384,4 +405,4 @@ const DashboardLayout = () => {
   );
 };
 
-export default DashboardLayout;
+export default AdminLayout;

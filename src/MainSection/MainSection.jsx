@@ -1,17 +1,17 @@
-import React, { use, useState } from 'react';
+import React, { useState } from 'react'; // 'use' রিমুভ করা হয়েছে
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, TrendingUp, Sparkles } from 'lucide-react';
 import Card from './Card';
 
-const MainSection = ({ foodsPromise }) => {
-  const foods = use(foodsPromise);
+// এখানে সরাসরি 'foods' অ্যারে রিসিভ করা হচ্ছে
+const MainSection = ({ foods = [] }) => {
+  const [showAllFoods, setShowAllFoods] = useState(false);
 
-  // Filter foods with purchase_count > 200
+  // Supabase এ সাধারণত '_id' এর বদলে 'id' থাকে
+  // purchase_count > 200 ফিল্টার লজিক
   const foodsWithHighPurchaseCount = foods.filter(
     food => Number(food.purchase_count) > 200,
   );
-
-  const [showAllFoods, setShowAllFoods] = useState(false);
 
   const displayedFoods = showAllFoods
     ? foodsWithHighPurchaseCount
@@ -21,13 +21,12 @@ const MainSection = ({ foodsPromise }) => {
     setShowAllFoods(!showAllFoods);
   };
 
-  // Animation Variants for the Grid
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15, // একে একে কার্ডগুলো আসার টাইম গ্যাপ
+        staggerChildren: 0.15,
       },
     },
   };
@@ -74,7 +73,7 @@ const MainSection = ({ foodsPromise }) => {
           </motion.p>
         </div>
 
-        {/* --- FOODS GRID WITH STAGGER ANIMATION --- */}
+        {/* --- FOODS GRID --- */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -83,9 +82,9 @@ const MainSection = ({ foodsPromise }) => {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
         >
           <AnimatePresence mode="popLayout">
-            {displayedFoods.map((food, index) => (
+            {displayedFoods.map(food => (
               <motion.div
-                key={food._id}
+                key={food.id} // Supabase এ '_id' এর বদলে 'id' ব্যবহার করুন
                 layout
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -98,7 +97,7 @@ const MainSection = ({ foodsPromise }) => {
           </AnimatePresence>
         </motion.div>
 
-        {/* --- LOAD MORE / SHOW LESS BUTTON --- */}
+        {/* --- BUTTON SECTION --- */}
         <div className="flex flex-col justify-center items-center mt-20">
           {foodsWithHighPurchaseCount.length > 6 && (
             <motion.div
@@ -106,9 +105,7 @@ const MainSection = ({ foodsPromise }) => {
               whileInView={{ opacity: 1 }}
               className="relative group"
             >
-              {/* Decorative Glow behind button */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-[#E65100] to-orange-400 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-
+              <div className="absolute -inset-1 bg-gradient-to-r from-[#E65100] to-orange-400 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
               <button
                 onClick={handleToggleShowAll}
                 className="relative flex items-center gap-3 px-10 py-5 bg-[#1a1a1a] text-[#fcf9f5] rounded-full font-black text-xs uppercase tracking-widest hover:bg-[#E65100] transition-all duration-500 shadow-2xl"
@@ -126,7 +123,6 @@ const MainSection = ({ foodsPromise }) => {
             </motion.div>
           )}
 
-          {/* Bottom helper text */}
           {!showAllFoods && (
             <p className="mt-6 text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em]">
               Explore our full heritage collection

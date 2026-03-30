@@ -1,0 +1,268 @@
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../supabase/supabaseClient';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Clock,
+  Truck,
+  CheckCircle,
+  Trash2,
+  ExternalLink,
+  Search,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react';
+import Swal from 'sweetalert2';
+
+const ManageOrders = () => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*, foods (name, image_url)')
+      .order('created_at', { ascending: false });
+
+    if (!error) setOrders(data || []);
+    setLoading(false);
+  };
+
+  // --- ১. স্ট্যাটাস আপডেট লজিক ---
+  const updateStatus = async (id, newStatus) => {
+    const { error } = await supabase
+      .from('applications')
+      .update({ status: newStatus })
+      .eq('id', id);
+
+    if (!error) {
+      setOrders(
+        orders.map(order =>
+          order.id === id ? { ...order, status: newStatus } : order,
+        ),
+      );
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `Order: ${newStatus.toUpperCase()}`,
+        showConfirmButton: false,
+        timer: 1500,
+        background: '#1a1a1a',
+        color: '#fff',
+      });
+    }
+  };
+
+  // --- ২. ডিলিট লজিক ---
+  const handleDeleteOrder = async id => {
+    const result = await Swal.fire({
+      title: 'Purge Order?',
+      text: 'This action will permanently erase the transaction from the boutique archive.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#1a1a1a',
+      cancelButtonColor: '#E65100',
+      confirmButtonText: 'Yes, Delete',
+      background: '#fcf9f5',
+      customClass: { popup: 'rounded-[3rem] border border-black/5 shadow-2xl' },
+    });
+
+    if (result.isConfirmed) {
+      const { error } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', id);
+      if (!error) {
+        setOrders(orders.filter(o => o.id !== id));
+        Swal.fire('Deleted!', 'The record has been purged.', 'success');
+      } else {
+        Swal.fire('Error', 'Failed to delete record.', 'error');
+      }
+    }
+  };
+
+  const getStatusStyle = status => {
+    switch (status) {
+      case 'pending':
+        return 'bg-orange-50 text-orange-600 border-orange-100';
+      case 'paid':
+        return 'bg-blue-50 text-blue-600 border-blue-100';
+      case 'processing':
+        return 'bg-purple-50 text-purple-600 border-purple-100';
+      case 'delivered':
+        return 'bg-green-50 text-green-600 border-green-100';
+      case 'cancelled':
+        return 'bg-red-50 text-red-600 border-red-100';
+      default:
+        return 'bg-gray-50 text-gray-400';
+    }
+  };
+
+  // ফিল্টার লজিক
+  const filteredOrders = orders.filter(
+    o =>
+      o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.applicant_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.foods?.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  return (
+    <div className="space-y-10">
+      <header className="flex flex-col md:flex-row justify-between items-end gap-6">
+        <div>
+          <h2 className="text-4xl font-black text-[#1a1a1a] tracking-tighter italic uppercase leading-none">
+            Order <span className="text-[#E65100] not-italic">Flow.</span>
+          </h2>
+          <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.4em] mt-3">
+            Real-time Transaction Management
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="relative group flex-1 md:w-72">
+            <input
+              type="text"
+              placeholder="Search Reference, Email..."
+              className="w-full bg-white border border-black/5 rounded-2xl py-4 pl-12 pr-6 text-[10px] font-black uppercase tracking-widest outline-none focus:border-[#E65100]/30 transition-all shadow-sm"
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"
+              size={16}
+            />
+          </div>
+          <button
+            onClick={fetchOrders}
+            className="p-4 bg-white rounded-2xl border border-black/5 shadow-sm hover:text-[#E65100] transition-all"
+          >
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </header>
+
+      <div className="bg-white rounded-[3.5rem] border border-black/5 shadow-sm overflow-hidden relative">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-[#fcf9f5] border-b border-black/5">
+              <tr className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                <th className="p-8 italic">Ref ID</th>
+                <th>Delicacy</th>
+                <th>Patron Identity</th>
+                <th>Value</th>
+                <th>Status</th>
+                <th className="p-8 text-right">Master Control</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              <AnimatePresence mode="popLayout">
+                {filteredOrders.map((order, i) => (
+                  <motion.tr
+                    key={order.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, x: -20 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="border-b border-black/[0.03] hover:bg-[#fcf9f5]/50 transition-all group"
+                  >
+                    <td className="p-8">
+                      <span className="text-[10px] font-mono text-gray-400 group-hover:text-[#E65100] transition-colors">
+                        #{order.id.slice(0, 8).toUpperCase()}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={order.foods?.image_url}
+                          className="w-12 h-12 rounded-2xl object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                          alt=""
+                        />
+                        <p className="font-black text-[#1a1a1a] uppercase tracking-tighter">
+                          {order.foods?.name}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="font-medium text-gray-500 text-xs italic">
+                      {order.applicant_email}
+                    </td>
+                    <td className="font-black text-[#E65100] italic leading-none">
+                      ${order.price_usd}
+                    </td>
+                    <td>
+                      <span
+                        className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border tracking-widest ${getStatusStyle(order.status)}`}
+                      >
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="p-8 text-right">
+                      <div className="flex justify-end gap-2">
+                        {/* --- UPDATE ACTIONS --- */}
+                        {order.status === 'pending' && (
+                          <button
+                            onClick={() => updateStatus(order.id, 'paid')}
+                            className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                            title="Mark as Paid"
+                          >
+                            <CheckCircle size={16} />
+                          </button>
+                        )}
+                        {order.status === 'paid' && (
+                          <button
+                            onClick={() => updateStatus(order.id, 'processing')}
+                            className="p-3 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition-all shadow-sm"
+                            title="Mark as Processing"
+                          >
+                            <RefreshCw size={16} />
+                          </button>
+                        )}
+                        {order.status === 'processing' && (
+                          <button
+                            onClick={() => updateStatus(order.id, 'delivered')}
+                            className="p-3 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
+                            title="Mark as Delivered"
+                          >
+                            <Truck size={16} />
+                          </button>
+                        )}
+
+                        {/* --- DELETE ACTION --- */}
+                        <button
+                          onClick={() => handleDeleteOrder(order.id)}
+                          className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                          title="Delete Permanently"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+
+                        <button className="p-3 bg-gray-50 text-gray-400 rounded-xl hover:bg-black hover:text-white transition-all shadow-sm">
+                          <ExternalLink size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
+        {filteredOrders.length === 0 && !loading && (
+          <div className="py-32 text-center flex flex-col items-center justify-center opacity-30">
+            <Clock size={48} strokeWidth={1} />
+            <p className="mt-4 font-black uppercase tracking-[0.5em] text-xs">
+              No Boutique Transactions Found
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ManageOrders;

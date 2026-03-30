@@ -1,150 +1,218 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { Quote, Sparkles } from 'lucide-react';
 
 const chefsData = [
   {
     id: '1',
     name: 'Robert John',
-    title: 'Senior chef',
+    title: 'Executive Chef',
     image:
-      'https://i.ibb.co/4vFbZCV/Whats-App-Image-2025-06-12-at-01-49-58-7237b35a.jpg', // Replace with actual image URL
-    socials: {
-      facebook: 'https://facebook.com/robertjohn', // Example link
-      twitter: 'https://twitter.com/robertjohn', // Example link
-      instagram: 'https://instagram.com/robertjohn', // Example link
-    },
+      'https://i.ibb.co/4vFbZCV/Whats-App-Image-2025-06-12-at-01-49-58-7237b35a.jpg',
+    socials: { facebook: '#', twitter: '#', instagram: '#' },
   },
   {
     id: '2',
     name: 'Harnis Joe',
-    title: 'Veg chef',
+    title: 'Cuisine Specialist',
     image:
-      'https://i.ibb.co/DfLgmMJc/Whats-App-Image-2025-06-12-at-01-49-58-6d45a8e4.jpg', // Replace with actual image URL
-    socials: {
-      facebook: 'https://facebook.com/harnisjoe',
-      twitter: 'https://twitter.com/harnisjoe',
-      instagram: 'https://instagram.com/harnisjoe',
-    },
+      'https://i.ibb.co/DfLgmMJc/Whats-App-Image-2025-06-12-at-01-49-58-6d45a8e4.jpg',
+    socials: { facebook: '#', twitter: '#', instagram: '#' },
   },
   {
     id: '3',
     name: 'Merry Joe',
-    title: 'Junior chef',
+    title: 'Pastry Artisan',
     image:
-      'https://i.ibb.co/nqfXhRth/Whats-App-Image-2025-06-12-at-01-49-59-d0cc0e02.jpg', // Replace with actual image URL
-    socials: {
-      facebook: 'https://facebook.com/merryjoe',
-      twitter: 'https://twitter.com/merryjoe',
-      instagram: 'https://instagram.com/merryjoe',
-    },
+      'https://i.ibb.co/nqfXhRth/Whats-App-Image-2025-06-12-at-01-49-59-d0cc0e02.jpg',
+    socials: { facebook: '#', twitter: '#', instagram: '#' },
   },
   {
     id: '4',
     name: 'Alison Bergt',
-    title: 'Supervisor',
+    title: 'Kitchen Supervisor',
     image:
-      'https://i.ibb.co/Z4k5jYb/Whats-App-Image-2025-06-12-at-01-50-00-25a0f839.jpg', // Replace with actual image URL
-    socials: {
-      facebook: 'https://facebook.com/alisonbergt',
-      twitter: 'https://twitter.com/alisonbergt',
-      instagram: 'https://instagram.com/alisonbergt',
-    },
+      'https://i.ibb.co/Z4k5jYb/Whats-App-Image-2025-06-12-at-01-50-00-25a0f839.jpg',
+    socials: { facebook: '#', twitter: '#', instagram: '#' },
   },
-  // You can add more chefs here
 ];
 
-const ChefsSection = () => {
-  return (
-    <section className="py-16 shadow-2xl">
-      <div className="container mx-auto text-center">
-        <h2 className="font-serif text-4xl md:text-5xl  mb-4">Our Chefs</h2>
-        <p className=" mb-10">
-          Our Chefs are trained specifically to provide quality food.
-        </p>
+const SocialIcons = {
+  Facebook: () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  ),
+  Instagram: () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  ),
+  Twitter: () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+    </svg>
+  ),
+};
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+const ChefsSection = () => {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2 },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
+
+  return (
+    <section className="py-32 bg-[#fcf9f5] overflow-hidden">
+      <div className="container mx-auto px-6 lg:px-20">
+        {/* --- SECTION HEADER --- */}
+        <div className="flex flex-col items-center mb-24 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 mb-6 bg-orange-100/50 px-4 py-1.5 rounded-full"
+          >
+            <Sparkles size={14} className="text-[#E65100]" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E65100]">
+              The Masterminds
+            </span>
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter leading-none italic uppercase"
+          >
+            Culinary{' '}
+            <span className="text-[#E65100] not-italic">Artisans.</span>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            className="mt-6 text-gray-400 max-w-lg text-sm font-medium uppercase tracking-widest leading-relaxed"
+          >
+            Our chefs are trained specifically to translate passion into every
+            masterpiece served at your table.
+          </motion.p>
+        </div>
+
+        {/* --- CHEFS GRID --- */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-100px' }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8"
+        >
           {chefsData.map(chef => (
-            <div key={chef.id} className="flex flex-col items-center">
-              {/* Image Container with Social Icons */}
-              {/* Added 'group' to this div to enable group-hover effects on children */}
-              <div className="relative w-64 h-80 shadow-md rounded-md overflow-hidden group bg-gray-200 ">
-                {/* Chef's Image */}
-                <img
+            <motion.div
+              key={chef.id}
+              variants={cardVariants}
+              className="flex flex-col items-center group"
+            >
+              {/* Image Container */}
+              <div className="relative w-full aspect-[4/5] rounded-[3.5rem] overflow-hidden shadow-2xl border-[10px] border-white group-hover:border-[#E65100]/10 transition-all duration-700">
+                {/* Background Decor */}
+                <div className="absolute inset-0 bg-[#1a1a1a]/10 group-hover:bg-transparent transition-all duration-500" />
+
+                <motion.img
                   src={chef.image}
                   alt={chef.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 "
-                  // Added onerror for fallback in case image fails to load
-                  onError={e => {
-                    e.target.onerror = null;
-                    e.target.src =
-                      'https://placehold.co/300x350/cccccc/ffffff?text=Image+Unavailable';
-                  }}
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ duration: 0.8 }}
+                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                 />
 
-                {/* Social Icons Overlay - Initially transparent, fades in on hover */}
-                {/* Changed bg-black to bg-black/50 for a subtle transparency */}
-                <div className="absolute inset-0 bg-black/50 flex items-center  justify-center space-x-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 ">
-                  {chef.socials.facebook && (
-                    <a
-                      href={chef.socials.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className=" hover:text-green-400 transition-all duration-300 ease-out transform scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100"
-                    >
-                      {/* Facebook SVG Icon */}
-                      <svg
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                        className="w-8 h-8"
-                      >
-                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12c6.627 0 12-5.373 12-12S18.627 0 12 0zm3 8h-2v2h2v3h-2v7h-3v-7H8V9h2V7.5C10 6.12 10.835 5 13 5h2v3z" />
-                      </svg>
-                    </a>
-                  )}
-                  {chef.socials.twitter && (
-                    <a
-                      href={chef.socials.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className=" hover:text-green-300 transition-all duration-300 ease-out transform scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100"
-                      // Adding a slight delay for a staggered effect
-                      style={{ transitionDelay: '50ms' }}
-                    >
-                      {/* Twitter SVG Icon */}
-                      <svg
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                        className="w-8 h-8"
-                      >
-                        <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.791-1.574 2.163-2.723-.951.564-2.005.974-3.127 1.195-.897-.957-2.174-1.555-3.594-1.555-3.409 0-6.173 2.764-6.173 6.172 0 .484.055.955.158 1.408-5.145-.259-9.721-2.729-12.785-6.479-.533.917-.836 1.983-.836 3.13 0 2.146 1.097 4.041 2.766 5.147-.806-.025-1.564-.247-2.228-.616v.081c0 2.986 2.127 5.474 4.93 6.037-.516.136-1.064.208-1.624.208-.398 0-.783-.038-1.157-.113.784 2.443 3.06 4.228 5.757 4.276-2.091 1.64-4.735 2.618-7.58 2.618-.493 0-.976-.029-1.453-.085 2.706 1.738 5.928 2.752 9.39 2.752 11.264 0 17.41-9.351 17.41-17.41 0-.266-.007-.529-.02-.791 1.2-.865 2.247-1.993 3.078-3.256z" />
-                      </svg>
-                    </a>
-                  )}
-                  {chef.socials.instagram && (
-                    <a
-                      href={chef.socials.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className=" hover:text-green-400 transition-all duration-300 ease-out transform scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100"
-                      // Adding a slight delay for a staggered effect
-                      style={{ transitionDelay: '100ms' }}
-                    >
-                      {/* Instagram SVG Icon */}
-                      <svg
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                        className="w-8 h-8"
-                      >
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.071 1.17.055 1.805.249 2.227.415.56.217.96.477 1.385.9.426.425.687.825.903 1.385.166.422.36 1.057.415 2.227.059 1.266.071 1.646.071 4.85s-.012 3.584-.071 4.85c-.055 1.17-.249 1.805-.415 2.227-.217.56-.477.96-.9.9-.425.426-.825.687-1.385.903-.422.166-1.057.36-2.227.415-1.266.059-1.646.071-4.85.071s-3.584-.012-4.85-.071c-1.17-.055-1.805-.249-2.227-.415-.56-.217-.96-.477-1.385-.9-.426-.425-.687-.825-.903-1.385-.166-.422-.36-1.057-.415-2.227-.059-1.266-.071-1.646-.071-4.85s.012-3.584.071-4.85c.055-1.17.249-1.805.415-2.227.217-.56.477-.96.9-.9.425-.426.825-.687 1.385-.903.422-.166 1.057-.36 2.227-.415 1.266-.059 1.646-.071 4.85-.071zm0-2.163c-3.264 0-3.67.012-4.94.071-1.303.061-2.106.275-2.738.514-.645.245-1.187.592-1.742 1.147-.555.555-.902 1.097-1.147 1.742-.239.632-.453 1.435-.514 2.738-.059 1.27-.071 1.676-.071 4.94s.012 3.67.071 4.94c.061 1.303.275 2.106.514 2.738.245.645.592 1.187 1.147 1.742.555.555-.902 1.097-1.147 1.742-.239.632-.453 1.435-.514 2.738-.059 1.27-.071 1.676-.071 4.94s-.012-3.67-.071-4.94c-.061-1.303-.275-2.106-.514-2.738-.245-.645-.592-1.187-1.147-1.742-.555-.555-1.097-.902-1.742-1.147-.632-.239-1.435-.453-2.738-.514-1.27-.059-1.676-.071-4.94-.071zM12 16.5c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm0-7.5c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm5.724-4.571a1.083 1.083 0 100 2.167 1.083 1.083 0 000-2.167z" />
-                      </svg>
-                    </a>
-                  )}
+                {/* Social Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/60 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out backdrop-blur-sm">
+                  <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] mb-2 opacity-60">
+                    Connect With Artisan
+                  </p>
+                  <div className="flex gap-4">
+                    {['Facebook', 'Instagram', 'Twitter'].map((platform, i) => {
+                      const Icon = SocialIcons[platform];
+                      return (
+                        <motion.a
+                          key={i}
+                          href="#"
+                          whileHover={{
+                            scale: 1.2,
+                            backgroundColor: '#E65100',
+                          }}
+                          className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white border border-white/20 transition-colors"
+                        >
+                          <Icon />
+                        </motion.a>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quote Icon Badge */}
+                <div className="absolute top-6 right-6 w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#E65100] shadow-xl group-hover:rotate-12 transition-transform">
+                  <Quote size={18} fill="currentColor" className="opacity-20" />
                 </div>
               </div>
-              <h3 className="text-xl font-semibold  mt-4">{chef.name}</h3>
-              <p className=" text-sm">{chef.title}</p>
-            </div>
+
+              {/* Text Info */}
+              <div className="mt-8 text-center">
+                <h3 className="text-2xl font-black text-[#1a1a1a] uppercase tracking-tighter leading-none mb-1 group-hover:text-[#E65100] transition-colors">
+                  {chef.name}
+                </h3>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="h-[1px] w-4 bg-[#E65100]"></div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em]">
+                    {chef.title}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

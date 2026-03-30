@@ -1,191 +1,226 @@
-import React, { useState } from 'react';
-
-// --- Sample Menu Data ---
-// In a real application, this data would likely come from an API
-const menuData = [
-  // Main Courses
-  {
-    id: 'mc1',
-    category: 'Main Courses',
-    name: 'Moussaka Noodles',
-    description: 'Chicken / Apple / Tomatoes',
-    price: 11.05,
-    oldPrice: null, // No old price
-  },
-  {
-    id: 'mc2',
-    category: 'Main Courses',
-    name: 'Pad Thai',
-    description: 'Chicken / Apple / Tomatoes',
-    price: 18.0,
-    oldPrice: 20.0, // Discounted
-  },
-  {
-    id: 'mc3',
-    category: 'Main Courses',
-    name: 'Beef Pho',
-    description: 'Chicken / Apple / Tomatoes',
-    price: 15.0,
-    oldPrice: null,
-  },
-  {
-    id: 'mc4',
-    category: 'Main Courses',
-    name: 'Chicken Roast',
-    description: 'Chicken / Apple / Tomatoes',
-    price: 25.0,
-    oldPrice: null,
-  },
-
-  // Other items (could be in various categories)
-  {
-    id: 'des1',
-    category: 'Dessert',
-    name: 'Chocolate Lava Cake',
-    description: 'Rich chocolate, vanilla ice cream',
-    price: 8.5,
-    oldPrice: null,
-  },
-  {
-    id: 'sig1',
-    category: 'Signature',
-    name: "Chef's Special Risotto",
-    description: 'Arborio rice, wild mushrooms, truffle oil',
-    price: 32.0,
-    oldPrice: null,
-  },
-  {
-    id: 'st1',
-    category: 'Starter',
-    name: 'Spring Rolls',
-    description: 'Crispy vegetables, sweet chili dip',
-    price: 7.5,
-    oldPrice: null,
-  },
-  {
-    id: 'dr1',
-    category: 'Drinks',
-    name: 'Fresh Orange Juice',
-    description: 'Squeezed daily',
-    price: 4.0,
-    oldPrice: null,
-  },
-  {
-    id: 'ff1',
-    category: 'Fast Food',
-    name: 'Classic Burger',
-    description: 'Beef patty, lettuce, tomato, cheese',
-    price: 12.0,
-    oldPrice: null,
-  },
-
-  // Items from the image, but categorized for demonstration
-  {
-    id: 'img1',
-    category: 'Main Courses', // Assuming based on other items
-    name: 'Creamy Biscuits',
-    description: 'Chicken / Apple / Tomatoes',
-    price: 45.0,
-    oldPrice: null,
-  },
-  {
-    id: 'img2',
-    category: 'Main Courses', // Assuming based on other items
-    name: 'Fish and Chips',
-    description: 'Chicken / Apple / Tomatoes',
-    price: 18.0,
-    oldPrice: null,
-  },
-  {
-    id: 'img3',
-    category: 'Fast Food', // Or Starter, based on item type
-    name: 'Falafel Wrap',
-    description: 'Chicken / Apple / Tomatoes',
-    price: 2.0,
-    oldPrice: 3.0, // Discounted
-  },
-  {
-    id: 'img4',
-    category: 'Main Courses', // Assuming based on other items
-    name: 'Beef Stroganoff',
-    description: 'Chicken / Apple / Tomatoes',
-    price: 45.0,
-    oldPrice: null,
-  },
-];
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../supabase/supabaseClient';
+import {
+  Star,
+  Flame,
+  Diamond,
+  ChevronRight,
+  Zap,
+  Pizza,
+  Coffee,
+  Ham,
+  UtensilsCrossed,
+} from 'lucide-react';
+import Loading from '../Loading/Loading';
+import { useNavigate } from 'react-router-dom';
 
 const MenuSection = () => {
-  // Extract unique categories from the data, maintaining order for initial display
-  const categories = [
-    'Main Courses',
-    'Dessert',
-    'Signature',
-    'Starter',
-    'Drinks',
-    'Fast Food',
-    // Add any other categories you have in your data
+  const [menuItems, setMenuItems] = useState([]);
+  const [activeTab, setActiveTab] = useState('All Masterpieces'); // ✅ ডিফল্ট এখন 'All'
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // --- সব ক্যাটাগরি এবং ফিল্টার ট্যাব ---
+  const tabs = [
+    {
+      name: 'All Masterpieces',
+      filter: 'all',
+      icon: <UtensilsCrossed size={14} />,
+    },
+    { name: '🔥 Signature', filter: 'is_signature', icon: <Star size={14} /> },
+    { name: '💎 Premium', filter: 'is_premium', icon: <Diamond size={14} /> },
+    { name: '🌶️ Spicy', filter: 'is_spicy', icon: <Flame size={14} /> },
+    { name: '🍕 Pizza', filter: 'Pizza', type: 'category' },
+    { name: '🍛 Biryani', filter: 'Biryani', type: 'category' },
+    { name: '🍔 Burger', filter: 'Burger', type: 'category' },
+    { name: '🍹 Drinks', filter: 'Drinks', type: 'category' },
   ];
 
-  const [activeCategory, setActiveCategory] = useState(categories[0]); // Default to 'Main Courses'
+  useEffect(() => {
+    const fetchMenuData = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.from('foods').select('*');
+      if (!error && data) {
+        setMenuItems(data);
+      }
+      setLoading(false);
+    };
+    fetchMenuData();
+  }, []);
 
-  const filteredItems = menuData.filter(
-    item => item.category === activeCategory
-  );
+  // --- উন্নত ফিল্টারিং লজিক ---
+  const getFilteredItems = () => {
+    const currentTab = tabs.find(t => t.name === activeTab);
+
+    if (currentTab.filter === 'all') return menuItems;
+
+    // যদি টাইপ 'category' হয় তবে ডাটাবেসের 'category' কলামে চেক করবে
+    if (currentTab.type === 'category') {
+      return menuItems.filter(item => item.category === currentTab.filter);
+    }
+
+    // অন্যথায় স্পেশাল ট্যাগগুলোতে চেক করবে (is_spicy, is_premium ইত্যাদি)
+    return menuItems.filter(item => item[currentTab.filter] === true);
+  };
+
+  const filteredItems = getFilteredItems();
+
+  if (loading)
+    return (
+      <div className="h-96 flex items-center justify-center">
+        <Loading />
+      </div>
+    );
 
   return (
-    <section className=" py-16 px-4 md:px-8 lg:px-16 shadow-2xl">
-      <div className="container mx-auto">
-        <h2 className="text-center font-serif text-4xl md:text-5xl  mb-12">
-          Our Special
+    <section className="py-24 bg-[#fcf9f5] relative overflow-hidden">
+      {/* Background Decor Watermark */}
+      <div className="absolute top-10 left-10 opacity-[0.02] pointer-events-none select-none">
+        <h2 className="text-[12vw] font-black leading-none uppercase italic text-[#1a1a1a]">
+          Archive
         </h2>
+      </div>
 
-        {/* Category Navigation */}
-        <div className="flex justify-center flex-wrap gap-x-6 gap-y-3 md:gap-x-8 md:gap-y-0 border-b rounded-2xl shadow-2xl pb-6 mb-12">
-          {categories.map(category => (
-            <button
-              key={category}
-              className={`
-                text-lg md:text-xl font-medium py-2 px-4 transition-colors duration-200 rounded-2xl
-                ${
-                  activeCategory === category
-                    ? ' border-b-2 border-green-800'
-                    : ' hover:text-green-700 hover:border-b-2 hover:border-green-400'
-                }
-              `}
-              onClick={() => setActiveCategory(category)}
-            >
-              {category}
-            </button>
-          ))}
+      <div className="container mx-auto px-6 lg:px-20 relative z-10">
+        {/* --- SECTION HEADER --- */}
+        <div className="text-center mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-center gap-2 mb-4"
+          >
+            <Zap size={14} className="text-[#E65100] fill-[#E65100]" />
+            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#E65100]">
+              The Full Selection
+            </span>
+          </motion.div>
+          <h2 className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter italic uppercase leading-none">
+            Boutique <span className="text-[#E65100] not-italic">Menu.</span>
+          </h2>
         </div>
 
-        {/* Menu Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 lg:gap-x-16 gap-y-8">
-          {filteredItems.length > 0 ? (
-            filteredItems.map(item => (
-              <div
-                key={item.id}
-                className="pb-6 border-b border-gray-200 last:border-b-0"
+        {/* --- LUXURY TAB NAVIGATION (Scrolling Support) --- */}
+        <div className="flex justify-center mb-20 overflow-x-auto pb-6 no-scrollbar">
+          <div className="flex bg-white/80 backdrop-blur-xl p-2 rounded-[2.5rem] border border-black/5 shadow-2xl min-w-max">
+            {tabs.map(tab => (
+              <button
+                key={tab.name}
+                onClick={() => setActiveTab(tab.name)}
+                className={`relative px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all duration-500 rounded-full flex items-center gap-2
+                  ${activeTab === tab.name ? 'text-white' : 'text-gray-400 hover:text-black'}
+                `}
               >
-                <div className="flex justify-between items-baseline mb-1">
-                  <h3 className="text-2xl font-semibold ">{item.name}</h3>
-                  <div className="flex items-baseline font-bold ">
-                    {item.oldPrice && (
-                      <span className="text-base  line-through mr-2">
-                        ${item.oldPrice.toFixed(2)}
-                      </span>
-                    )}
-                    <span className="text-lg">${item.price.toFixed(2)}</span>
-                  </div>
-                </div>
-                <p className=" text-sm">{item.description}</p>
-              </div>
-            ))
-          ) : (
-            <p className="md:col-span-2 text-center  text-lg">
-              No items found in this category.
-            </p>
-          )}
+                <span className="relative z-10">{tab.name}</span>
+                {activeTab === tab.name && (
+                  <motion.div
+                    layoutId="luxuryTabPill"
+                    className="absolute inset-0 bg-[#1a1a1a] rounded-full shadow-lg"
+                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* --- MENU LIST GRID --- */}
+        <div className="min-h-[50px]">
+          <AnimatePresence mode="wait">
+            {filteredItems.length > 0 ? (
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.5 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12"
+              >
+                {filteredItems.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.03 }}
+                    className="group flex justify-between items-start border-b border-black/5 pb-8 hover:border-[#E65100]/30 transition-all cursor-pointer"
+                  >
+                    <div className="flex-1 pr-6">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-black text-[#1a1a1a] uppercase tracking-tight group-hover:text-[#E65100] transition-colors leading-none">
+                          {item.name}
+                        </h3>
+                        {item.is_spicy && (
+                          <Flame
+                            size={14}
+                            className="text-red-500 fill-red-500 animate-pulse"
+                          />
+                        )}
+                        {item.is_signature && (
+                          <div className="w-1.5 h-1.5 bg-[#E65100] rounded-full" />
+                        )}
+                      </div>
+                      <p className="text-gray-400 text-[10px] font-bold leading-relaxed italic uppercase tracking-wider line-clamp-1">
+                        {item.description ||
+                          'Artisanal preparation with boutique spices.'}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col items-end shrink-0">
+                      <div className="flex items-center gap-2">
+                        {item.old_price_usd && (
+                          <span className="text-[10px] text-gray-300 line-through font-bold tracking-tighter italic">
+                            ${item.old_price_usd}
+                          </span>
+                        )}
+                        <span className="text-2xl font-black text-[#1a1a1a] tracking-tighter italic leading-none">
+                          ${item.price_usd}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[#E65100] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em]">
+                          {item.category}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center py-32 opacity-20"
+              >
+                <UtensilsCrossed size={64} strokeWidth={1} />
+                <p className="mt-4 font-black uppercase tracking-[0.4em] text-xs">
+                  Selection coming soon
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* --- VIEW ALL ACTION --- */}
+        <div className="mt-24 flex flex-col items-center gap-6">
+          <motion.button
+            onClick={() => navigate('/allFoods')}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="group flex items-center gap-6 bg-[#1a1a1a] text-white px-12 py-6 rounded-full shadow-2xl hover:bg-[#E65100] transition-all duration-500"
+          >
+            <div className="text-left">
+              <p className="text-[11px] font-black uppercase tracking-[0.4em]">
+                Browse Archive
+              </p>
+              <p className="text-[9px] font-bold text-gray-400 group-hover:text-white transition-colors uppercase tracking-widest">
+                Full Boutique Experience
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+              <ChevronRight size={20} />
+            </div>
+          </motion.button>
         </div>
       </div>
     </section>

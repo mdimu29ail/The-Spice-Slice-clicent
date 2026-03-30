@@ -1,8 +1,8 @@
 import React from 'react';
 import ShowAllFoods from './ShowAllFoods';
-const foodsPromise = fetch(
-  'https://spice-slice-server-lac.vercel.app/foods',
-).then(res => res.json());
+const foodsPromise = fetch('http://localhost:3000/foods').then(res =>
+  res.json(),
+);
 
 const AllFoods = () => {
   return (

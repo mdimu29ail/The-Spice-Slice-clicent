@@ -1,126 +1,260 @@
-import React from 'react';
-import { useContext, useEffect, useState } from 'react';
-import { useLoaderData, useNavigate } from 'react-router';
+import React, { useContext, useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuthContext } from '../Auth/AuthContext';
-import { FaUtensils, FaStar, FaTag, FaListAlt, FaUser } from 'react-icons/fa';
-import Swal from 'sweetalert2';
+import { supabase } from '../supabase/supabaseClient';
+import {
+  Utensils,
+  Star,
+  Tag,
+  Layers,
+  User,
+  ShoppingBag,
+  ArrowLeft,
+  Flame,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  ShieldCheck,
+} from 'lucide-react';
+import Loading from '../Loading/Loading';
 
 const Details = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const food = useLoaderData();
-  const [isVisible, setIsVisible] = useState(false);
+  const [food, setFood] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const isOutOfStock = parseInt(food.availableQuantity) === 0;
-  const isOwnItem = user?.email === food.createdBy;
-
-  const handlePurchase = () => {
-    if (!isOutOfStock && !isOwnItem) {
-      navigate(`/orderNow/${food._id}`, {
-        state: {
-          quantity: 1,
-          maxQuantity: parseInt(food.availableQuantity),
-          foodName: food.name,
-        },
-      });
-    }
-  };
-
-  const message = isOutOfStock
-    ? 'This item is out of stock.'
-    : isOwnItem
-    ? 'You cannot purchase your own food item.'
-    : '';
-
+  // --- SUPABASE DATA FETCHING ---
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchFoodDetails = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (!error) setFood(data);
+      setLoading(false);
+    };
+    fetchFoodDetails();
+  }, [id]);
+
+  if (loading) return <Loading />;
+  if (!food)
+    return (
+      <div className="h-screen flex items-center justify-center text-gray-400 font-black uppercase tracking-widest">
+        Masterpiece Not Found.
+      </div>
+    );
+
+  const available = food.is_available;
+  const isOwnItem = user?.email === food.created_by_email;
 
   return (
-    <div className="flex justify-center items-center min-h-screen  py-10 ">
-      <div
-        className={`backdrop-blur-xl bg-white/10 border-b-2 rounded-3xl shadow-2xl p-8 max-w-2xl w-full transform transition-all duration-700 ease-out ${
-          isVisible ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
-        }`}
-      >
-        <img
-          src={food.image_url}
-          alt={food.name}
-          className="w-full h-64 object-cover rounded-2xl mb-6 shadow-md border border-white/30"
-        />
+    <div className="min-h-screen bg-[#fcf9f5] pt-32 pb-20 px-6 lg:px-20 relative overflow-hidden font-sans">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 opacity-[0.02] pointer-events-none select-none">
+        <h1 className="text-[25vw] font-black italic uppercase leading-none">
+          Delicacy
+        </h1>
+      </div>
 
-        <h2 className="text-4xl font-extrabold  text-center mb-2 tracking-wide">
-          {food.name}
-        </h2>
-        <p className="text-center  italic mb-6 border-b-2 rounded-2xl px-5 py-2">
-          {food.title}
-        </p>
+      <div className="max-w-7xl mx-auto">
+        {/* Back Navigation */}
+        <Link
+          to="/allFoods"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-[#1a1a1a] transition-all mb-10 group"
+        >
+          <ArrowLeft
+            size={18}
+            className="group-hover:-translate-x-1 transition-transform"
+          />
+          <span className="text-[10px] font-black uppercase tracking-[0.4em]">
+            Back to Gallery
+          </span>
+        </Link>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4  mb-6 ">
-          <DetailRow
-            icon={<FaListAlt />}
-            label="Category"
-            value={food.category}
-          />
-          <DetailRow
-            icon={<FaUtensils />}
-            label="Cuisine"
-            value={food.cuisine}
-          />
-          <DetailRow
-            icon={<FaTag />}
-            label="Price"
-            value={`$${food.price_usd}`}
-          />
-          <DetailRow
-            icon={<FaStar />}
-            label="Rating"
-            value={`⭐ ${food.rating}`}
-          />
-          <DetailRow
-            icon={<FaListAlt />}
-            label="Available"
-            value={food.availableQuantity}
-          />
-          <DetailRow
-            icon={<FaUser />}
-            label="Seller"
-            value={`${food.hr_name} (${food.createdBy})`}
-          />
-        </div>
-
-        {message && (
-          <p className="text-center text-red-400 font-semibold my-4 animate-pulse">
-            {message}
-          </p>
-        )}
-
-        <div className="flex justify-center">
-          <button
-            onClick={handlePurchase}
-            disabled={isOutOfStock || isOwnItem}
-            className={`border-b-2 rounded-2xl px-5 py-3 ${
-              isOutOfStock || isOwnItem
-                ? 'text-green-600 font-bold border-b-2 border-green-600 rounded-2xl'
-                : ' hover:text-green-400 border-b-2  rounded-2xl'
-            }`}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          {/* --- LEFT: CINEMATIC IMAGE --- */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            className="lg:col-span-6 relative"
           >
-            Purchase Now
-          </button>
+            <div className="aspect-square w-full rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border-[12px] border-white relative group">
+              <motion.img
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 1.5 }}
+                src={food.image_url}
+                alt={food.name}
+                className="w-full h-full object-cover"
+              />
+              {/* Image Overlay Badge */}
+              <div className="absolute top-10 left-10 flex gap-3">
+                {food.is_signature && (
+                  <div className="bg-[#1a1a1a] text-white p-4 rounded-3xl shadow-2xl flex items-center gap-2">
+                    <Star size={16} fill="#E65100" className="text-[#E65100]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      Signature
+                    </span>
+                  </div>
+                )}
+                {food.discount > 0 && (
+                  <div className="bg-[#E65100] text-white px-5 py-3 rounded-2xl shadow-2xl">
+                    <span className="text-sm font-black italic">
+                      {food.discount}% OFF
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Stats Summary */}
+            <div className="mt-10 flex gap-10 px-10">
+              <div className="text-center">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  Acquisitions
+                </p>
+                <p className="text-xl font-black text-[#1a1a1a]">
+                  {food.purchase_count}+
+                </p>
+              </div>
+              <div className="h-10 w-[1px] bg-black/5" />
+              <div className="text-center">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  Rating
+                </p>
+                <p className="text-xl font-black text-[#1a1a1a] flex items-center gap-1 italic">
+                  <Star size={14} fill="#E65100" className="text-[#E65100]" />{' '}
+                  {food.rating || '4.9'}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* --- RIGHT: ARTISANAL DETAILS --- */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="lg:col-span-6 space-y-10"
+          >
+            <div>
+              <div className="flex items-center gap-3 mb-4 text-[#E65100]">
+                <Sparkles size={20} />
+                <span className="text-[10px] font-black uppercase tracking-[0.5em]">
+                  The Artisanal Selection
+                </span>
+              </div>
+              <h2 className="text-6xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter uppercase italic leading-none">
+                {food.name}
+              </h2>
+            </div>
+
+            <p className="text-gray-500 text-lg font-medium leading-relaxed italic border-l-4 border-[#E65100]/20 pl-8">
+              {food.description ||
+                'A masterfully spiced slice of perfection, crafted for the ultimate culinary journey. Each bite reveals the soul of traditional spices blended with modern precision.'}
+            </p>
+
+            {/* Delicacy Stats Grid */}
+            <div className="grid grid-cols-2 gap-8 bg-white p-10 rounded-[3.5rem] border border-black/5 shadow-sm">
+              <InfoItem
+                icon={<Layers size={18} />}
+                label="Category"
+                value={food.category}
+              />
+              <InfoItem
+                icon={<Utensils size={18} />}
+                label="Cuisine"
+                value={food.cuisine || 'Global Fusion'}
+              />
+              <InfoItem
+                icon={<CheckCircle2 size={18} className="text-green-500" />}
+                label="Status"
+                value={available ? 'In Kitchen' : 'Sold Out'}
+              />
+              <InfoItem
+                icon={<User size={18} />}
+                label="Artisan"
+                value={food.created_by_email?.split('@')[0]}
+              />
+            </div>
+
+            {/* Price & Action */}
+            <div className="flex flex-col sm:flex-row items-center gap-10 pt-10">
+              <div className="flex flex-col leading-none">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                  Value Amount
+                </span>
+                <div className="flex items-end gap-3">
+                  <h3 className="text-5xl font-black text-[#E65100] tracking-tighter italic">
+                    ${food.price_usd}
+                  </h3>
+                  {food.old_price_usd && (
+                    <span className="text-gray-300 text-xl line-through font-bold mb-1">
+                      ${food.old_price_usd}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex-1 w-full">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={!available || isOwnItem}
+                  onClick={() => navigate(`/orderNow/${food.id}`)}
+                  className={`w-full py-6 rounded-[2rem] font-black uppercase text-xs tracking-[0.4em] shadow-2xl transition-all flex items-center justify-center gap-4 ${
+                    !available || isOwnItem
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-[#1a1a1a] text-white hover:bg-[#E65100]'
+                  }`}
+                >
+                  {isOwnItem
+                    ? 'Your Masterpiece'
+                    : available
+                      ? 'Authorize Purchase'
+                      : 'Exhausted Stock'}
+                  <ShoppingBag size={18} />
+                </motion.button>
+
+                {isOwnItem && (
+                  <p className="text-center text-[10px] font-bold text-orange-600 uppercase mt-4 tracking-widest animate-pulse">
+                    Chef, you cannot buy your own creations.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-10 flex items-center gap-3 text-green-600/50">
+              <ShieldCheck size={16} />
+              <p className="text-[10px] font-black uppercase tracking-widest">
+                End-to-End Secure Transaction
+              </p>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>
   );
 };
 
-// Detail row component
-const DetailRow = ({ icon, label, value }) => (
-  <div className="flex items-center gap-3  px-4 py-2 rounded-xl border-b-2  shadow-inner">
-    <span className="text-lg">{icon}</span>
-    <span className="font-semibold text-sm">
-      {label}: <span className="font-normal">{value}</span>
-    </span>
+// --- Sub-component for Info Grid ---
+const InfoItem = ({ icon, label, value }) => (
+  <div className="flex flex-col gap-2">
+    <div className="flex items-center gap-2 text-gray-300">
+      {icon}
+      <span className="text-[9px] font-black uppercase tracking-widest">
+        {label}
+      </span>
+    </div>
+    <p className="text-sm font-bold text-[#1a1a1a] uppercase tracking-tight">
+      {value}
+    </p>
   </div>
 );
 

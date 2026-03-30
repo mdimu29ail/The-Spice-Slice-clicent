@@ -9,7 +9,7 @@ const ShowAllFoods = ({ foodsPromise }) => {
 
   // Filter foods by search term
   const filteredFoods = foods.filter(food =>
-    food.name.toLowerCase().includes(searchTerm.toLowerCase())
+    food.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const displayedFoods = showAllFoods

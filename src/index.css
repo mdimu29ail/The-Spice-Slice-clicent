@@ -1,4 +1,13 @@
 @import 'tailwindcss';
 @plugin "daisyui";
-
+@import 'leaflet/dist/leaflet.css';
 /* index.css */
+/* স্ক্রলবার হাইড করার কাস্টম ইউটিলিটি */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
