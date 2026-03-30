@@ -41,7 +41,7 @@ const CheckoutForm = ({
 
   useEffect(() => {
     if (food?.price_usd > 0) {
-      fetch('http://localhost:3000/create-payment-intent', {
+      fetch('https://the-spice-slice-server.vercel.app/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ price: food.price_usd }),

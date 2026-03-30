@@ -62,7 +62,7 @@
 //       try {
 //         // আপনার ব্যাকএন্ডের ফুল ইউআরএল ব্যবহার করুন
 //         const response = await fetch(
-//           `http://localhost:3000/applications/${id}`,
+//           `https://the-spice-slice-server.vercel.app/applications/${id}`,
 //           {
 //             method: 'DELETE',
 //           },
