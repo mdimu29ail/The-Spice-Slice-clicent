@@ -17,6 +17,7 @@ const foodItems = [
     title: 'The Oceanic',
     subtitle: 'SUSHI MASTERPIECE',
     tagline: 'Slices of pure artisanal perfection from the deep blue.',
+    thumbImg: 'https://i.ibb.co/VW0mh7qs/Sushi-Platter.jpg',
   },
   {
     id: '2',
@@ -24,6 +25,7 @@ const foodItems = [
     title: 'Golden Roast',
     subtitle: 'HERB INFUSED',
     tagline: 'Hand-ground spices meet slow-roasted organic chicken.',
+    thumbImg: 'https://i.ibb.co/b5vrr5XW/Chicken-Roast.jpg',
   },
   {
     id: '3',
@@ -31,6 +33,7 @@ const foodItems = [
     title: 'Flame Slice',
     subtitle: 'NEAPOLITAN HEART',
     tagline: 'Fire-blasted crust with our signature spicy tomato fusion.',
+    thumbImg: 'https://i.ibb.co/xSFGDQgd/Margherita-Pizza.jpg',
   },
   {
     id: '4',
@@ -38,6 +41,7 @@ const foodItems = [
     title: 'Heritage Soul',
     subtitle: 'BENGALI TRADITION',
     tagline: 'The absolute classic, served with a boutique spicy twist.',
+    thumbImg: 'https://i.ibb.co/FbqkNB4f/Panta-Ilish.jpg',
   },
 ];
 
