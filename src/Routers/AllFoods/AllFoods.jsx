@@ -6,7 +6,7 @@ const foodsPromise = fetch(
 
 const AllFoods = () => {
   return (
-    <div className="w-11/12 mx-auto">
+    <div className="w-full mx-auto">
       <ShowAllFoods foodsPromise={foodsPromise}></ShowAllFoods>
     </div>
   );
