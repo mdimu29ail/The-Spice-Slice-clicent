@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
+import { Helmet } from 'react-helmet-async'; // SEO এর জন্য
 import animationData from '../assets/register.json';
 import { AuthContext } from '../Auth/AuthContext';
 import Swal from 'sweetalert2';
@@ -12,7 +13,6 @@ import {
   ArrowRight,
   Sparkles,
   ShieldCheck,
-  ChefHat,
   ChevronLeft,
   UserPlus,
 } from 'lucide-react';
@@ -48,7 +48,7 @@ const Register = () => {
 
     try {
       // ১. ইউজার তৈরি করা
-      const result = await createUser(email, password);
+      await createUser(email, password);
 
       // ২. প্রোফাইল আপডেট করা (নাম সেট করা)
       if (updateUserProfile) {
@@ -74,9 +74,19 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcf9f5] flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-orange-100">
+    <main className="min-h-screen bg-[#fcf9f5] flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-orange-100">
+      {/* SEO: Page Metadata */}
+      <Helmet>
+        <title>Register | The Spice Slice Boutique</title>
+        <meta
+          name="description"
+          content="Create your unique identity at The Spice Slice. Join our elite circle to unlock artisanal flavors and personalized gourmet services."
+        />
+      </Helmet>
+
       {/* --- BACKGROUND DECOR --- */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Accessibility: Decorative elements hidden from screen readers */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <motion.div
           animate={{ y: [0, 20, 0], x: [0, 10, 0] }}
           transition={{ duration: 12, repeat: Infinity }}
@@ -91,13 +101,11 @@ const Register = () => {
 
       <div className="container max-w-6xl mx-auto flex flex-col lg:flex-row-reverse items-center gap-12 z-10">
         {/* --- RIGHT SIDE: ANIMATION & TEXT --- */}
-        <motion.div
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1 }}
-          className="hidden lg:flex flex-col justify-center items-end w-1/2 p-12 text-right"
-        >
-          <div className="w-16 h-16 bg-[#1a1a1a] rounded-3xl flex items-center justify-center mb-8 shadow-2xl self-end">
+        <section className="hidden lg:flex flex-col justify-center items-end w-1/2 p-12 text-right">
+          <div
+            className="w-16 h-16 bg-[#1a1a1a] rounded-3xl flex items-center justify-center mb-8 shadow-2xl self-end"
+            aria-hidden="true"
+          >
             <UserPlus className="text-[#E65100]" size={32} />
           </div>
           <h2 className="text-6xl font-black text-[#1a1a1a] leading-tight tracking-tighter uppercase italic mb-6">
@@ -108,13 +116,16 @@ const Register = () => {
             Create your unique identity to unlock artisanal flavors and
             personalized gourmand services.
           </p>
-          <div className="w-full max-w-sm opacity-70 scale-110">
+          <div
+            className="w-full max-w-sm opacity-70 scale-110"
+            aria-hidden="true"
+          >
             <Lottie animationData={animationData} loop={true} />
           </div>
-        </motion.div>
+        </section>
 
         {/* --- LEFT SIDE: REGISTER CARD --- */}
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -124,34 +135,43 @@ const Register = () => {
           <Link
             to="/login"
             className="absolute top-10 left-10 text-gray-300 hover:text-[#E65100] transition-colors"
+            aria-label="Go back to login page"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={24} aria-hidden="true" />
           </Link>
 
           <header className="mb-10 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 mb-6">
+            <div
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 mb-6"
+              aria-hidden="true"
+            >
               <Sparkles size={14} className="text-[#E65100]" />
               <span className="text-[10px] font-black uppercase tracking-widest text-[#E65100]">
                 Patron Registration
               </span>
             </div>
-            <h3 className="text-3xl font-black text-[#1a1a1a] tracking-tighter uppercase">
+            <h1 className="text-3xl font-black text-[#1a1a1a] tracking-tighter uppercase">
               New Identity.
-            </h3>
+            </h1>
           </header>
 
           <form onSubmit={handleRegister} className="space-y-7">
             {/* Name Input */}
             <div className="group relative border-b border-black/10 focus-within:border-[#E65100] transition-all duration-500 pb-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 group-focus-within:text-[#E65100]">
+              <label
+                htmlFor="full-name"
+                className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 group-focus-within:text-[#E65100]"
+              >
                 Full Name
               </label>
               <div className="flex items-center gap-4">
                 <User
                   size={18}
                   className="text-gray-300 group-focus-within:text-[#E65100] transition-colors"
+                  aria-hidden="true"
                 />
                 <input
+                  id="full-name"
                   type="text"
                   name="name"
                   required
@@ -163,15 +183,20 @@ const Register = () => {
 
             {/* Email Input */}
             <div className="group relative border-b border-black/10 focus-within:border-[#E65100] transition-all duration-500 pb-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 group-focus-within:text-[#E65100]">
+              <label
+                htmlFor="email"
+                className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 group-focus-within:text-[#E65100]"
+              >
                 Identity (Email)
               </label>
               <div className="flex items-center gap-4">
                 <Mail
                   size={18}
                   className="text-gray-300 group-focus-within:text-[#E65100] transition-colors"
+                  aria-hidden="true"
                 />
                 <input
+                  id="email"
                   type="email"
                   name="email"
                   required
@@ -183,15 +208,20 @@ const Register = () => {
 
             {/* Password Input */}
             <div className="group relative border-b border-black/10 focus-within:border-[#E65100] transition-all duration-500 pb-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 group-focus-within:text-[#E65100]">
+              <label
+                htmlFor="password"
+                className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 group-focus-within:text-[#E65100]"
+              >
                 Secret Key (Password)
               </label>
               <div className="flex items-center gap-4">
                 <Lock
                   size={18}
                   className="text-gray-300 group-focus-within:text-[#E65100] transition-colors"
+                  aria-hidden="true"
                 />
                 <input
+                  id="password"
                   type="password"
                   name="password"
                   required
@@ -205,12 +235,18 @@ const Register = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               disabled={isSubmitting}
+              type="submit"
               className="w-full bg-[#1a1a1a] text-[#fcf9f5] py-5 rounded-2xl flex items-center justify-center gap-4 shadow-2xl hover:bg-[#E65100] transition-all duration-500 disabled:opacity-50"
+              aria-label={
+                isSubmitting
+                  ? 'Creating your account'
+                  : 'Initialize access and create identity'
+              }
             >
               <span className="text-[11px] font-black uppercase tracking-[0.4em]">
                 {isSubmitting ? 'Creating Identity...' : 'Initialize Access'}
               </span>
-              <ArrowRight size={18} />
+              <ArrowRight size={18} aria-hidden="true" />
             </motion.button>
           </form>
 
@@ -220,20 +256,24 @@ const Register = () => {
             <Link
               to="/login"
               className="text-[#E65100] ml-2 underline underline-offset-4 hover:text-[#1a1a1a] transition-colors font-black"
+              title="Go to login page"
             >
               Sign In
             </Link>
           </p>
 
-          <div className="mt-10 flex justify-center items-center gap-2 text-green-600/50">
+          <div
+            className="mt-10 flex justify-center items-center gap-2 text-green-600/50"
+            aria-hidden="true"
+          >
             <ShieldCheck size={14} />
             <p className="text-[9px] font-black uppercase tracking-widest">
               Privacy Protected Portal
             </p>
           </div>
-        </motion.div>
+        </motion.section>
       </div>
-    </div>
+    </main>
   );
 };
 

@@ -1,8 +1,14 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  useMemo,
+  useCallback,
+} from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../Auth/AuthContext';
 import { useCart } from '../context/CartContext';
-import { supabase } from '../supabase/supabaseClient'; // সুপাবেস ক্লায়েন্ট ইমপোর্ট করুন
+import { supabase } from '../supabase/supabaseClient';
 import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,36 +23,38 @@ import {
   ShoppingBag,
   Trash2,
   ArrowRight,
-  User as UserIcon,
 } from 'lucide-react';
 
 const NavBar = () => {
   const { user, logOut, isAdmin } = useContext(AuthContext);
   const { cart, cartCount, cartTotal, removeFromCart } = useCart();
 
-  const [profile, setProfile] = useState(null); // প্রোফাইল ডাটার জন্য স্টেট
+  const [profile, setProfile] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [hoveredLink, setHoveredLink] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
 
-  // --- ১. প্রোফাইল ইমেজ এবং ডাটা সিঙ্ক (profiles টেবিল থেকে) ---
+  // --- ১. প্রোফাইল ডাটা সিঙ্ক (Performance: Error handling added) ---
   useEffect(() => {
     if (!user?.id) return;
 
     const fetchProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('avatar_url, full_name')
-        .eq('id', user.id)
-        .single();
-      if (!error) setProfile(data);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('avatar_url, full_name')
+          .eq('id', user.id)
+          .single();
+        if (!error) setProfile(data);
+      } catch (err) {
+        console.error('Profile fetch error:', err);
+      }
     };
 
     fetchProfile();
 
-    // রিয়েল-টাইম আপডেট লিসেনার (যাতে প্রোফাইল চেঞ্জ করলে নেভবার অটো আপডেট হয়)
     const profileSubscription = supabase
       .channel('navbar-profile-sync')
       .on(
@@ -57,27 +65,45 @@ const NavBar = () => {
           table: 'profiles',
           filter: `id=eq.${user.id}`,
         },
-        payload => {
-          setProfile(payload.new);
-        },
+        payload => setProfile(payload.new),
       )
       .subscribe();
 
-    return () => supabase.removeChannel(profileSubscription);
+    return () => {
+      supabase.removeChannel(profileSubscription);
+    };
   }, [user?.id]);
 
-  // --- SCROLL EFFECT ---
+  // --- ২. থিম লজিক (Best Practices: Initial state optimization) ---
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem('theme') || 'light',
+  );
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const handleToggle = useCallback(() => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
+
+  // --- ৩. স্ক্রল ইফেক্ট (Performance: Passive listener) ---
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'All Foods', path: '/allFoods' },
-    { name: 'Gallery', path: '/gallery' },
-  ];
+  // SEO & Performance: Nav links memoized
+  const navLinks = useMemo(
+    () => [
+      { name: 'Home', path: '/' },
+      { name: 'All Foods', path: '/allFoods' },
+      { name: 'Gallery', path: '/gallery' },
+    ],
+    [],
+  );
 
   const handleSignOut = async () => {
     const result = await Swal.fire({
@@ -108,16 +134,23 @@ const NavBar = () => {
         }`}
       >
         <div className="flex justify-between items-center">
-          {/* --- LOGO --- */}
-          <Link to="/" className="flex items-center gap-2 group">
+          {/* --- LOGO (SEO: Title added) --- */}
+          <Link
+            to="/"
+            className="flex items-center gap-2 group"
+            title="The Spice Slice Home"
+          >
             <motion.div
               whileHover={{ rotate: 180, scale: 1.1 }}
               className="w-10 h-10 bg-[#E65100] rounded-2xl flex items-center justify-center shadow-lg"
             >
               <img
                 src="https://i.ibb.co/MxBvKxGY/Chat-GPT-Image-AM.png"
-                alt="Logo"
+                alt="The Spice Slice Logo"
                 className="w-6 h-6 brightness-200"
+                width="24"
+                height="24"
+                loading="eager"
               />
             </motion.div>
             <div className="flex flex-col leading-none">
@@ -130,8 +163,11 @@ const NavBar = () => {
             </div>
           </Link>
 
-          {/* --- CENTER: NAVIGATION --- */}
-          <nav className="hidden lg:flex items-center bg-black/5 dark:bg-white/5 p-1.5 rounded-full relative">
+          {/* --- CENTER: NAVIGATION (Accessibility: aria-label added) --- */}
+          <nav
+            className="hidden lg:flex items-center bg-black/5 dark:bg-white/5 p-1.5 rounded-full relative"
+            aria-label="Main Navigation"
+          >
             <ul className="flex items-center">
               {navLinks.map(link => (
                 <li
@@ -179,11 +215,23 @@ const NavBar = () => {
           {/* --- RIGHT: ACTIONS --- */}
           <div className="flex items-center gap-3">
             <div className="flex items-center bg-white/40 dark:bg-black/20 p-1 rounded-full border border-white/50 dark:border-white/5">
+              {/* Accessibility: aria-label added to buttons */}
+              {/* <button
+                type="button"
+                onClick={handleToggle}
+                className="p-2 rounded-full hover:bg-white dark:hover:bg-[#1a1a1a] text-[#E65100] transition-all"
+                aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              >
+                {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              </button> */}
+
               <button
+                type="button"
                 onClick={() => setIsCartOpen(true)}
                 className="p-2 rounded-full hover:bg-white dark:hover:bg-[#1a1a1a] text-[#1a1a1a] dark:text-white transition-all relative"
+                aria-label={`Open shopping cart, ${cartCount} items`}
               >
-                <ShoppingCart size={16} />
+                <ShoppingCart size={16} aria-hidden="true" />
                 {cartCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
@@ -201,17 +249,21 @@ const NavBar = () => {
                 <motion.label
                   tabIndex={0}
                   className={`btn btn-ghost btn-circle avatar border-2 p-0.5 ${isAdmin ? 'border-orange-600 animate-pulse' : 'border-[#E65100]'}`}
+                  aria-label="User profile menu"
                 >
                   <div className="w-9 rounded-full overflow-hidden bg-gray-100">
-                    {/* ফিক্সড ইমেজ সোর্স: প্রথমে প্রোফাইল টেবিল, তারপর মেটাডাটা, তারপর প্লেসহোল্ডার */}
                     <img
                       src={
                         profile?.avatar_url ||
                         user?.user_metadata?.avatar_url ||
                         'https://i.pravatar.cc/150?img=32'
                       }
-                      alt="Avatar"
+                      alt={`${profile?.full_name || 'User'}'s avatar`}
                       className="w-full h-full object-cover"
+                      width="36"
+                      height="36"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                 </motion.label>
@@ -227,31 +279,39 @@ const NavBar = () => {
                       {profile?.full_name || user?.displayName || user?.email}
                     </p>
                   </div>
+
                   {isAdmin && (
                     <li>
                       <Link
                         to="/admin"
                         className="flex items-center gap-3 py-3 font-bold text-orange-700 bg-orange-50 dark:bg-orange-950/20 rounded-xl mb-1"
                       >
-                        <ShieldCheck size={18} /> Admin Control
+                        <ShieldCheck size={18} aria-hidden="true" /> Admin
+                        Control
                       </Link>
                     </li>
                   )}
+
                   <li>
                     <Link
                       to="/dashboard"
-                      className="flex items-center gap-3 py-3 font-bold"
+                      className="flex items-center gap-3 py-3 font-bold dark:text-white"
                     >
-                      <LayoutDashboard size={18} /> User Dashboard
+                      <LayoutDashboard size={18} aria-hidden="true" /> User
+                      Dashboard
                     </Link>
                   </li>
-                  <div className="h-[1px] bg-black/5 dark:bg-white/5 my-2"></div>
+                  <div
+                    className="h-[1px] bg-black/5 dark:bg-white/5 my-2"
+                    aria-hidden="true"
+                  ></div>
                   <li>
                     <button
+                      type="button"
                       onClick={handleSignOut}
                       className="flex items-center gap-3 py-3 text-red-500 font-bold"
                     >
-                      <LogOut size={18} /> Sign Out
+                      <LogOut size={18} aria-hidden="true" /> Sign Out
                     </button>
                   </li>
                 </motion.ul>
@@ -272,8 +332,11 @@ const NavBar = () => {
             )}
 
             <button
+              type="button"
               className="lg:hidden p-2 text-[#1a1a1a] dark:text-white"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -299,14 +362,18 @@ const NavBar = () => {
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25 }}
             className="fixed inset-0 h-screen bg-[#fcf9f5] dark:bg-[#0c0c0c] z-[60] flex flex-col p-10 lg:hidden"
+            role="dialog"
+            aria-modal="true"
           >
             <div className="flex justify-between items-center mb-20">
               <span className="text-3xl font-black italic tracking-tighter uppercase dark:text-white">
                 Menu.
               </span>
               <button
+                type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 className="dark:text-white"
+                aria-label="Close menu"
               >
                 <X size={32} />
               </button>
@@ -342,7 +409,7 @@ const NavBar = () => {
   );
 };
 
-// --- CART DRAWER SUB-COMPONENT ---
+// --- SUB-COMPONENT: CART DRAWER (Optimized) ---
 const CartDrawer = ({ isOpen, onClose, cartItems, total, removeItem }) => (
   <AnimatePresence>
     {isOpen && (
@@ -353,6 +420,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, total, removeItem }) => (
           exit={{ opacity: 0 }}
           onClick={onClose}
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
+          aria-hidden="true"
         />
         <motion.div
           initial={{ x: '100%' }}
@@ -360,17 +428,25 @@ const CartDrawer = ({ isOpen, onClose, cartItems, total, removeItem }) => (
           exit={{ x: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           className="fixed top-0 right-0 h-full w-full max-w-md bg-[#fcf9f5] dark:bg-[#0c0c0c] shadow-2xl z-[70] flex flex-col p-10"
+          role="dialog"
+          aria-label="Shopping Cart"
         >
           <div className="flex justify-between items-center mb-10">
             <div className="flex items-center gap-3">
-              <ShoppingBag size={24} className="text-[#E65100]" />
+              <ShoppingBag
+                size={24}
+                className="text-[#E65100]"
+                aria-hidden="true"
+              />
               <h2 className="text-2xl font-black tracking-tighter uppercase italic dark:text-white">
                 Selections.
               </h2>
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all"
+              aria-label="Close cart"
             >
               <X size={24} className="dark:text-white" />
             </button>
@@ -383,20 +459,25 @@ const CartDrawer = ({ isOpen, onClose, cartItems, total, removeItem }) => (
                     <img
                       src={item.image_url}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      alt=""
+                      alt={item.name}
+                      width="80"
+                      height="80"
+                      loading="lazy"
                     />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-black text-xs uppercase tracking-tight dark:text-white">
+                    <h3 className="font-black text-xs uppercase tracking-tight dark:text-white">
                       {item.name}
-                    </h4>
-                    <p className="text-[#E65100] font-black text-xs mt-1">
+                    </h3>
+                    <p className="text-[#E65100] font-black text-sm mt-1">
                       ${item.price_usd} x {item.quantity || 1}
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => removeItem(item.id)}
                     className="text-red-400 hover:text-red-600 transition-colors p-2"
+                    aria-label={`Remove ${item.name} from cart`}
                   >
                     <Trash2 size={18} />
                   </button>
@@ -404,7 +485,11 @@ const CartDrawer = ({ isOpen, onClose, cartItems, total, removeItem }) => (
               ))
             ) : (
               <div className="h-full flex flex-col items-center justify-center opacity-20">
-                <ShoppingBag size={64} className="dark:text-white" />
+                <ShoppingBag
+                  size={64}
+                  className="dark:text-white"
+                  aria-hidden="true"
+                />
                 <p className="mt-4 font-black uppercase tracking-widest text-xs dark:text-white">
                   Empty Basket
                 </p>
@@ -422,8 +507,11 @@ const CartDrawer = ({ isOpen, onClose, cartItems, total, removeItem }) => (
                 </span>
               </div>
               <Link to="/payment/checkout" onClick={onClose}>
-                <button className="w-full bg-[#1a1a1a] dark:bg-[#E65100] text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.3em] flex items-center justify-center gap-3 hover:opacity-90 transition-all shadow-xl">
-                  Authorize Payment <ArrowRight size={18} />
+                <button
+                  type="button"
+                  className="w-full bg-[#1a1a1a] dark:bg-[#E65100] text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.3em] flex items-center justify-center gap-3 hover:opacity-90 transition-all shadow-xl"
+                >
+                  Authorize Payment <ArrowRight size={18} aria-hidden="true" />
                 </button>
               </Link>
             </div>

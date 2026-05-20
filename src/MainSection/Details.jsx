@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async'; // SEO এর জন্য
 import { AuthContext } from '../Auth/AuthContext';
 import { supabase } from '../supabase/supabaseClient';
 import {
@@ -30,47 +31,74 @@ const Details = () => {
   useEffect(() => {
     const fetchFoodDetails = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('foods')
-        .select('*')
-        .eq('id', id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('foods')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      if (!error) setFood(data);
-      setLoading(false);
+        if (!error) setFood(data);
+      } catch (err) {
+        console.error('Error fetching details:', err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchFoodDetails();
   }, [id]);
 
   if (loading) return <Loading />;
+
   if (!food)
     return (
-      <div className="h-screen flex items-center justify-center text-gray-400 font-black uppercase tracking-widest">
+      <main
+        className="h-screen flex items-center justify-center text-gray-400 font-black uppercase tracking-widest"
+        role="alert"
+      >
         Masterpiece Not Found.
-      </div>
+      </main>
     );
 
   const available = food.is_available;
   const isOwnItem = user?.email === food.created_by_email;
 
   return (
-    <div className="min-h-screen bg-[#fcf9f5] pt-32 pb-20 px-6 lg:px-20 relative overflow-hidden font-sans">
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 opacity-[0.02] pointer-events-none select-none">
-        <h1 className="text-[25vw] font-black italic uppercase leading-none">
+    <main className="min-h-screen bg-[#fcf9f5] pt-32 pb-20 px-6 lg:px-20 relative overflow-hidden font-sans selection:bg-orange-100">
+      {/* SEO: Dynamic Metadata */}
+      <Helmet>
+        <title>{food.name} | The Spice Slice Boutique</title>
+        <meta
+          name="description"
+          content={
+            food.description ||
+            `Discover the artisanal flavors of ${food.name}. Hand-picked spices and artisanal preparation.`
+          }
+        />
+        <meta property="og:image" content={food.image_url} />
+      </Helmet>
+
+      {/* Background Decor - Accessibility: aria-hidden */}
+      <div
+        className="absolute top-0 right-0 opacity-[0.02] pointer-events-none select-none"
+        aria-hidden="true"
+      >
+        <div className="text-[25vw] font-black italic uppercase leading-none">
           Delicacy
-        </h1>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto">
+      <article className="max-w-7xl mx-auto">
         {/* Back Navigation */}
         <Link
           to="/allFoods"
           className="inline-flex items-center gap-2 text-gray-400 hover:text-[#1a1a1a] transition-all mb-10 group"
+          aria-label="Back to food gallery"
         >
           <ArrowLeft
             size={18}
             className="group-hover:-translate-x-1 transition-transform"
+            aria-hidden="true"
           />
           <span className="text-[10px] font-black uppercase tracking-[0.4em]">
             Back to Gallery
@@ -85,19 +113,31 @@ const Details = () => {
             transition={{ duration: 0.8 }}
             className="lg:col-span-6 relative"
           >
-            <div className="aspect-square w-full rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border-[12px] border-white relative group">
+            <figure className="aspect-square w-full rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border-[12px] border-white relative group">
               <motion.img
                 whileHover={{ scale: 1.1 }}
                 transition={{ duration: 1.5 }}
                 src={food.image_url}
-                alt={food.name}
+                alt={`Visual representation of ${food.name}`}
                 className="w-full h-full object-cover"
+                loading="eager" // Performance: হিরো ইমেজ হিসেবে দ্রুত লোড হবে
+                decoding="async"
+                width="600"
+                height="600"
               />
-              {/* Image Overlay Badge */}
-              <div className="absolute top-10 left-10 flex gap-3">
+              {/* Image Overlay Badges */}
+              <div
+                className="absolute top-10 left-10 flex gap-3"
+                aria-label="Food tags"
+              >
                 {food.is_signature && (
                   <div className="bg-[#1a1a1a] text-white p-4 rounded-3xl shadow-2xl flex items-center gap-2">
-                    <Star size={16} fill="#E65100" className="text-[#E65100]" />
+                    <Star
+                      size={16}
+                      fill="#E65100"
+                      className="text-[#E65100]"
+                      aria-hidden="true"
+                    />
                     <span className="text-[10px] font-black uppercase tracking-widest">
                       Signature
                     </span>
@@ -111,10 +151,14 @@ const Details = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </figure>
 
             {/* Stats Summary */}
-            <div className="mt-10 flex gap-10 px-10">
+            <div
+              className="mt-10 flex gap-10 px-10"
+              role="group"
+              aria-label="Food statistics"
+            >
               <div className="text-center">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
                   Acquisitions
@@ -123,15 +167,23 @@ const Details = () => {
                   {food.purchase_count}+
                 </p>
               </div>
-              <div className="h-10 w-[1px] bg-black/5" />
+              <div className="h-10 w-[1px] bg-black/5" aria-hidden="true" />
               <div className="text-center">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
                   Rating
                 </p>
-                <p className="text-xl font-black text-[#1a1a1a] flex items-center gap-1 italic">
-                  <Star size={14} fill="#E65100" className="text-[#E65100]" />{' '}
+                <div
+                  className="text-xl font-black text-[#1a1a1a] flex items-center gap-1 italic"
+                  aria-label={`Rating ${food.rating || '4.9'} out of 5`}
+                >
+                  <Star
+                    size={14}
+                    fill="#E65100"
+                    className="text-[#E65100]"
+                    aria-hidden="true"
+                  />{' '}
                   {food.rating || '4.9'}
-                </p>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -143,17 +195,18 @@ const Details = () => {
             transition={{ duration: 0.8 }}
             className="lg:col-span-6 space-y-10"
           >
-            <div>
+            <header>
               <div className="flex items-center gap-3 mb-4 text-[#E65100]">
-                <Sparkles size={20} />
+                <Sparkles size={20} aria-hidden="true" />
                 <span className="text-[10px] font-black uppercase tracking-[0.5em]">
                   The Artisanal Selection
                 </span>
               </div>
-              <h2 className="text-6xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter uppercase italic leading-none">
+              {/* SEO: h1 for main product title */}
+              <h1 className="text-6xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter uppercase italic leading-none">
                 {food.name}
-              </h2>
-            </div>
+              </h1>
+            </header>
 
             <p className="text-gray-500 text-lg font-medium leading-relaxed italic border-l-4 border-[#E65100]/20 pl-8">
               {food.description ||
@@ -161,24 +214,33 @@ const Details = () => {
             </p>
 
             {/* Delicacy Stats Grid */}
-            <div className="grid grid-cols-2 gap-8 bg-white p-10 rounded-[3.5rem] border border-black/5 shadow-sm">
+            <div
+              className="grid grid-cols-2 gap-8 bg-white p-10 rounded-[3.5rem] border border-black/5 shadow-sm"
+              role="list"
+            >
               <InfoItem
-                icon={<Layers size={18} />}
+                icon={<Layers size={18} aria-hidden="true" />}
                 label="Category"
                 value={food.category}
               />
               <InfoItem
-                icon={<Utensils size={18} />}
+                icon={<Utensils size={18} aria-hidden="true" />}
                 label="Cuisine"
                 value={food.cuisine || 'Global Fusion'}
               />
               <InfoItem
-                icon={<CheckCircle2 size={18} className="text-green-500" />}
+                icon={
+                  <CheckCircle2
+                    size={18}
+                    className={available ? 'text-green-500' : 'text-red-500'}
+                    aria-hidden="true"
+                  />
+                }
                 label="Status"
                 value={available ? 'In Kitchen' : 'Sold Out'}
               />
               <InfoItem
-                icon={<User size={18} />}
+                icon={<User size={18} aria-hidden="true" />}
                 label="Artisan"
                 value={food.created_by_email?.split('@')[0]}
               />
@@ -186,16 +248,22 @@ const Details = () => {
 
             {/* Price & Action */}
             <div className="flex flex-col sm:flex-row items-center gap-10 pt-10">
-              <div className="flex flex-col leading-none">
+              <div
+                className="flex flex-col leading-none"
+                aria-label={`Price: ${food.price_usd} dollars`}
+              >
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
                   Value Amount
                 </span>
                 <div className="flex items-end gap-3">
-                  <h3 className="text-5xl font-black text-[#E65100] tracking-tighter italic">
+                  <span className="text-5xl font-black text-[#E65100] tracking-tighter italic">
                     ${food.price_usd}
-                  </h3>
+                  </span>
                   {food.old_price_usd && (
-                    <span className="text-gray-300 text-xl line-through font-bold mb-1">
+                    <span
+                      className="text-gray-300 text-xl line-through font-bold mb-1"
+                      aria-label="Original price"
+                    >
                       ${food.old_price_usd}
                     </span>
                   )}
@@ -204,6 +272,7 @@ const Details = () => {
 
               <div className="flex-1 w-full">
                 <motion.button
+                  type="button"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   disabled={!available || isOwnItem}
@@ -213,24 +282,37 @@ const Details = () => {
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-[#1a1a1a] text-white hover:bg-[#E65100]'
                   }`}
+                  aria-label={
+                    isOwnItem
+                      ? 'You cannot buy your own item'
+                      : available
+                        ? 'Authorize purchase of this masterpiece'
+                        : 'Item out of stock'
+                  }
                 >
                   {isOwnItem
                     ? 'Your Masterpiece'
                     : available
                       ? 'Authorize Purchase'
                       : 'Exhausted Stock'}
-                  <ShoppingBag size={18} />
+                  <ShoppingBag size={18} aria-hidden="true" />
                 </motion.button>
 
                 {isOwnItem && (
-                  <p className="text-center text-[10px] font-bold text-orange-600 uppercase mt-4 tracking-widest animate-pulse">
+                  <p
+                    className="text-center text-[10px] font-bold text-orange-600 uppercase mt-4 tracking-widest animate-pulse"
+                    aria-live="assertive"
+                  >
                     Chef, you cannot buy your own creations.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="pt-10 flex items-center gap-3 text-green-600/50">
+            <div
+              className="pt-10 flex items-center gap-3 text-green-600/50"
+              aria-hidden="true"
+            >
               <ShieldCheck size={16} />
               <p className="text-[10px] font-black uppercase tracking-widest">
                 End-to-End Secure Transaction
@@ -238,14 +320,14 @@ const Details = () => {
             </div>
           </motion.div>
         </div>
-      </div>
-    </div>
+      </article>
+    </main>
   );
 };
 
 // --- Sub-component for Info Grid ---
 const InfoItem = ({ icon, label, value }) => (
-  <div className="flex flex-col gap-2">
+  <div className="flex flex-col gap-2" role="listitem">
     <div className="flex items-center gap-2 text-gray-300">
       {icon}
       <span className="text-[9px] font-black uppercase tracking-widest">

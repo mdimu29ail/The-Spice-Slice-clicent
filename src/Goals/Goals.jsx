@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Target, Sparkles, ChevronRight, Utensils } from 'lucide-react';
+import { Clock, Target, Sparkles, ChevronRight } from 'lucide-react';
 
 const Goals = () => {
   // Animation Variants
@@ -19,7 +19,10 @@ const Goals = () => {
   };
 
   return (
-    <section className="bg-[#fcf9f5] py-24 lg:py-32 overflow-hidden">
+    <section
+      className="bg-[#fcf9f5] py-24 lg:py-32 overflow-hidden font-sans"
+      aria-labelledby="goals-heading"
+    >
       <div className="container mx-auto px-6 lg:px-20">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
           {/* --- LEFT SIDE: THE BIG VISION IMAGE --- */}
@@ -30,16 +33,23 @@ const Goals = () => {
             transition={{ duration: 1 }}
             className="w-full lg:w-1/2 relative group"
           >
-            {/* Image Frame Decor */}
-            <div className="absolute -top-6 -left-6 w-32 h-32 border-t-4 border-l-4 border-[#E65100]/20 rounded-tl-[4rem] group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-700" />
+            {/* Accessibility: Decorative border hidden from screen readers */}
+            <div
+              className="absolute -top-6 -left-6 w-32 h-32 border-t-4 border-l-4 border-[#E65100]/20 rounded-tl-[4rem] group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-700"
+              aria-hidden="true"
+            />
 
             <div className="relative h-[500px] lg:h-[700px] w-full rounded-[4rem] rounded-tr-none overflow-hidden shadow-2xl">
               <motion.img
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 1.5 }}
                 src="https://i.ibb.co/Q7mwcDJz/h4-img-01.jpg"
-                alt="Our Vision"
+                alt="Interior of The Spice Slice boutique restaurant showing artisanal heritage decor"
                 className="h-full w-full object-cover"
+                loading="lazy" // Performance: Lazy loading
+                decoding="async" // Performance: Async decoding
+                width="800" // Performance: Layout shift prevention
+                height="1000"
               />
               {/* Image Overlay Label */}
               <div className="absolute bottom-10 right-0 bg-[#1a1a1a] text-white px-10 py-6 rounded-l-full shadow-2xl">
@@ -66,21 +76,30 @@ const Goals = () => {
                 variants={fadeInUp}
                 className="flex items-center gap-3 mb-6"
               >
-                <Target className="text-[#E65100]" size={20} />
+                <Target
+                  className="text-[#E65100]"
+                  size={20}
+                  aria-hidden="true"
+                />
                 <span className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-400">
                   Our Essence
                 </span>
               </motion.div>
 
-              <motion.h2
-                variants={fadeInUp}
+              <h2
+                id="goals-heading"
                 className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter leading-none italic uppercase mb-8"
               >
-                Defining the <br />
-                <span className="text-[#E65100] not-italic">
+                <motion.span variants={fadeInUp} className="block">
+                  Defining the
+                </motion.span>
+                <motion.span
+                  variants={fadeInUp}
+                  className="text-[#E65100] not-italic"
+                >
                   Spice Standard.
-                </span>
-              </motion.h2>
+                </motion.span>
+              </h2>
 
               <motion.p
                 variants={fadeInUp}
@@ -96,11 +115,13 @@ const Goals = () => {
                 variants={fadeInUp}
                 whileHover={{ x: 10 }}
                 className="group flex items-center gap-4 bg-[#1a1a1a] text-white px-10 py-5 rounded-full font-black text-[10px] uppercase tracking-[0.3em] hover:bg-[#E65100] transition-all shadow-xl"
+                aria-label="Read the full story about our goals and mission"
               >
                 The Full Story{' '}
                 <ChevronRight
                   size={16}
                   className="group-hover:translate-x-1 transition-transform"
+                  aria-hidden="true"
                 />
               </motion.button>
 
@@ -112,19 +133,30 @@ const Goals = () => {
                 <div className="w-40 h-40 flex-shrink-0 rounded-3xl overflow-hidden shadow-lg">
                   <img
                     src="https://i.ibb.co/Y4LNTsXT/h5-img4.jpg"
-                    alt="Kitchen"
+                    alt="Chef preparing hand-ground spices in the kitchen"
                     className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                    loading="lazy"
+                    decoding="async"
+                    width="160"
+                    height="160"
                   />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 w-full">
                   <div className="flex items-center gap-2 mb-4 text-[#E65100]">
-                    <Clock size={16} />
+                    <Clock size={16} aria-hidden="true" />
                     <h3 className="text-[10px] font-black uppercase tracking-widest">
                       Spice Schedule
                     </h3>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between border-b border-black/5 pb-1">
+                  <div
+                    className="space-y-2"
+                    role="list"
+                    aria-label="Opening hours"
+                  >
+                    <div
+                      className="flex justify-between border-b border-black/5 pb-1"
+                      role="listitem"
+                    >
                       <span className="text-xs font-bold text-gray-400 uppercase">
                         Mon – Thu
                       </span>
@@ -132,7 +164,10 @@ const Goals = () => {
                         10am – 1am
                       </span>
                     </div>
-                    <div className="flex justify-between border-b border-black/5 pb-1">
+                    <div
+                      className="flex justify-between border-b border-black/5 pb-1"
+                      role="listitem"
+                    >
                       <span className="text-xs font-bold text-gray-400 uppercase">
                         Fri – Sat
                       </span>
@@ -140,7 +175,7 @@ const Goals = () => {
                         10am – 2am
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between" role="listitem">
                       <span className="text-xs font-bold text-gray-400 uppercase">
                         Sunday
                       </span>
@@ -157,7 +192,10 @@ const Goals = () => {
       </div>
 
       {/* Decorative Background Text (Floating) */}
-      <div className="absolute top-[10%] left-0 opacity-[0.03] select-none pointer-events-none hidden lg:block">
+      <div
+        className="absolute top-[10%] left-0 opacity-[0.03] select-none pointer-events-none hidden lg:block"
+        aria-hidden="true"
+      >
         <h2 className="text-[20vw] font-black leading-none uppercase italic">
           Mission.
         </h2>

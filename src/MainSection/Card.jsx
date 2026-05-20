@@ -14,7 +14,7 @@ import { useCart } from '../context/CartContext';
 const Card = ({ food }) => {
   const { addToCart } = useCart();
   const available = food.is_available;
-  const discount = food.discount; // অ্যাডমিন থেকে আসা ডিসকাউন্ট (যেমন: ২০)
+  const discount = food.discount;
 
   return (
     <motion.div
@@ -25,7 +25,7 @@ const Card = ({ food }) => {
       className={`group relative w-full bg-white dark:bg-[#1a1a1a] rounded-[2.5rem] overflow-hidden shadow-xl border border-black/5 transition-all duration-500 hover:shadow-[0_40px_80px_rgba(230,81,0,0.15)] ${!available && 'opacity-75 grayscale-[0.3]'}`}
     >
       {/* --- IMAGE SECTION --- */}
-      <div className="relative h-72 overflow-hidden">
+      <div className="relative h-72 overflow-hidden bg-gray-100">
         {/* 1. DISCOUNT BADGE (Top Left) */}
         {discount > 0 && (
           <motion.div
@@ -33,17 +33,20 @@ const Card = ({ food }) => {
             animate={{ x: 0, opacity: 1 }}
             className="absolute top-6 left-6 z-20 flex items-center gap-1.5 px-4 py-2 bg-[#E65100] text-white rounded-2xl shadow-xl border border-white/20"
           >
-            <Percent size={14} strokeWidth={3} />
+            <Percent size={14} strokeWidth={3} aria-hidden="true" />
             <span className="text-xs font-black uppercase tracking-tighter">
               {discount}% OFF
             </span>
           </motion.div>
         )}
 
-        {/* Bestseller Icon (Top Right) if sales are high */}
+        {/* Bestseller Icon (Top Right) */}
         {food.purchase_count > 200 && (
-          <div className="absolute top-6 right-6 z-20 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-orange-500 shadow-lg">
-            <Flame size={20} fill="currentColor" />
+          <div
+            className="absolute top-6 right-6 z-20 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-orange-500 shadow-lg"
+            title="Bestseller item"
+          >
+            <Flame size={20} fill="currentColor" aria-hidden="true" />
           </div>
         )}
 
@@ -52,16 +55,22 @@ const Card = ({ food }) => {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           src={food.image_url}
           className="w-full h-full object-cover"
-          alt={food.name}
+          alt={`Artisanal dish: ${food.name}`} // SEO: Descriptive alt text
+          loading="lazy" // Performance: Lazy loading
+          decoding="async" // Performance: Async decoding
+          width="400" // Performance: Layout shift prevention
+          height="300"
         />
 
         {/* ADD TO CART BUTTON (Floating Right) */}
         {available && (
           <button
+            type="button" // Best Practice: Explicit button type
             onClick={() => addToCart(food)}
             className="absolute bottom-6 right-6 z-20 w-14 h-14 bg-white text-[#E65100] rounded-2xl flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 hover:bg-[#E65100] hover:text-white"
+            aria-label={`Add ${food.name} to cart`} // Accessibility: ARIA label
           >
-            <ShoppingBag size={26} />
+            <ShoppingBag size={26} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -77,20 +86,23 @@ const Card = ({ food }) => {
         <div className="flex items-center gap-2 mb-8">
           {available ? (
             <div className="flex items-center gap-1.5 text-green-600">
-              <CheckCircle2 size={14} />
+              <CheckCircle2 size={14} aria-hidden="true" />
               <span className="text-[10px] font-black uppercase tracking-widest">
                 In Stock & Fresh
               </span>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 text-red-500">
-              <Clock size={14} />
+              <Clock size={14} aria-hidden="true" />
               <span className="text-[10px] font-black uppercase tracking-widest">
                 Currently Sold Out
               </span>
             </div>
           )}
-          <div className="w-[1px] h-3 bg-black/10 mx-1"></div>
+          <div
+            className="w-[1px] h-3 bg-black/10 mx-1"
+            aria-hidden="true"
+          ></div>
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest italic">
             {food.category}
           </span>
@@ -109,19 +121,26 @@ const Card = ({ food }) => {
           </div>
 
           {/* 4. DETAILS BUTTON (Bottom Right) */}
-          <Link to={`/foods/${food.id}`}>
+          <Link
+            to={`/foods/${food.id}`}
+            aria-label={`View details for ${food.name}`} // Accessibility: Descriptive link
+          >
             <motion.button
+              type="button" // Best Practice
               whileHover={{ x: 5 }}
               className="flex items-center gap-3 px-8 py-4 bg-[#1a1a1a] hover:bg-[#E65100] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl"
             >
-              Details <ArrowRight size={14} />
+              Details <ArrowRight size={14} aria-hidden="true" />
             </motion.button>
           </Link>
         </div>
       </div>
 
       {/* Luxury Background Detail */}
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+      <div
+        className="absolute -bottom-10 -left-10 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+        aria-hidden="true"
+      ></div>
     </motion.div>
   );
 };

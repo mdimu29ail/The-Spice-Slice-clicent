@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
+import { Helmet } from 'react-helmet-async'; // SEO এর জন্য
 import animationData from '../assets/login.json';
 import { AuthContext } from '../Auth/AuthContext';
 import Swal from 'sweetalert2';
@@ -56,9 +57,18 @@ const LogIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcf9f5] flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-orange-100">
+    <main className="min-h-screen bg-[#fcf9f5] flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-orange-100">
+      {/* SEO: Page Metadata */}
+      <Helmet>
+        <title>Login | The Spice Slice Boutique</title>
+        <meta
+          name="description"
+          content="Sign in to your The Spice Slice account to access your curated collection of artisanal masterpieces."
+        />
+      </Helmet>
+
       {/* --- BACKGROUND DECOR --- */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <motion.div
           animate={{ y: [0, -20, 0], rotate: [0, 10, 0] }}
           transition={{ duration: 10, repeat: Infinity }}
@@ -73,13 +83,11 @@ const LogIn = () => {
 
       <div className="container max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 z-10">
         {/* --- LEFT SIDE: BRANDING --- */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1 }}
-          className="hidden lg:flex flex-col justify-center items-start w-1/2 p-12"
-        >
-          <div className="w-16 h-16 bg-[#1a1a1a] rounded-3xl flex items-center justify-center mb-8 shadow-2xl">
+        <section className="hidden lg:flex flex-col justify-center items-start w-1/2 p-12">
+          <div
+            className="w-16 h-16 bg-[#1a1a1a] rounded-3xl flex items-center justify-center mb-8 shadow-2xl"
+            aria-hidden="true"
+          >
             <ChefHat className="text-[#E65100]" size={32} />
           </div>
           <h2 className="text-6xl font-black text-[#1a1a1a] leading-tight tracking-tighter uppercase italic mb-6">
@@ -90,26 +98,29 @@ const LogIn = () => {
             Sign in to access your curated collection of flavors and artisanal
             masterpieces.
           </p>
-          <div className="w-full max-w-xs opacity-60">
+          <div className="w-full max-w-xs opacity-60" aria-hidden="true">
             <Lottie animationData={animationData} loop={true} />
           </div>
-        </motion.div>
+        </section>
 
         {/* --- RIGHT SIDE: LOGIN CARD --- */}
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           className="w-full lg:w-[480px] bg-white/70 backdrop-blur-3xl p-10 lg:p-14 rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] border border-white relative"
         >
           <header className="mb-12 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 mb-6">
+            <div
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 mb-6"
+              aria-hidden="true"
+            >
               <Sparkles size={14} className="text-[#E65100]" />
               <span className="text-[10px] font-black uppercase tracking-widest text-[#E65100]">
                 Patron Portal
               </span>
             </div>
-            <h3 className="text-3xl font-black text-[#1a1a1a] tracking-tighter uppercase leading-none">
+            <h3 className="text-3xl font-black text-[#1a1a1a] tracking-tighter uppercase">
               Sign In.
             </h3>
           </header>
@@ -117,15 +128,20 @@ const LogIn = () => {
           <form onSubmit={handleLogin} className="space-y-8">
             {/* Identity Input */}
             <div className="group relative border-b border-black/10 focus-within:border-[#E65100] transition-all duration-500 pb-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 group-focus-within:text-[#E65100]">
+              <label
+                htmlFor="email"
+                className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 group-focus-within:text-[#E65100]"
+              >
                 Identity (Email)
               </label>
               <div className="flex items-center gap-4">
                 <Mail
                   size={18}
                   className="text-gray-300 group-focus-within:text-[#E65100] transition-colors"
+                  aria-hidden="true"
                 />
                 <input
+                  id="email"
                   type="email"
                   name="email"
                   required
@@ -135,15 +151,19 @@ const LogIn = () => {
               </div>
             </div>
 
-            {/* Secret Input */}
+            {/* Password Input */}
             <div className="group relative border-b border-black/10 focus-within:border-[#E65100] transition-all duration-500 pb-2">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block group-focus-within:text-[#E65100]">
+                <label
+                  htmlFor="password"
+                  className="text-[10px] font-black text-gray-400 uppercase tracking-widest block group-focus-within:text-[#E65100]"
+                >
                   Secret (Password)
                 </label>
                 <button
                   type="button"
                   className="text-[9px] font-black text-[#E65100] uppercase tracking-tighter hover:underline"
+                  aria-label="Recover forgotten password"
                 >
                   Recover?
                 </button>
@@ -152,8 +172,10 @@ const LogIn = () => {
                 <KeyRound
                   size={18}
                   className="text-gray-300 group-focus-within:text-[#E65100] transition-colors"
+                  aria-hidden="true"
                 />
                 <input
+                  id="password"
                   type="password"
                   name="password"
                   required
@@ -167,35 +189,41 @@ const LogIn = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               disabled={isSubmitting}
+              type="submit"
               className="w-full bg-[#1a1a1a] text-[#fcf9f5] py-5 rounded-2xl flex items-center justify-center gap-4 shadow-2xl hover:bg-[#E65100] transition-all duration-500 disabled:opacity-50"
+              aria-label={
+                isSubmitting
+                  ? 'Verifying credentials'
+                  : 'Authorize access to your account'
+              }
             >
               <span className="text-[11px] font-black uppercase tracking-[0.4em]">
                 {isSubmitting ? 'Verifying...' : 'Authorize Access'}
               </span>
-              {!isSubmitting && <Fingerprint size={20} />}
+              {!isSubmitting && <Fingerprint size={20} aria-hidden="true" />}
             </motion.button>
           </form>
 
           {/* Social Auth Section */}
           <div className="mt-12">
             <div className="flex items-center gap-4 mb-8">
-              <div className="h-[1px] flex-1 bg-black/5" />
+              <div className="h-[1px] flex-1 bg-black/5" aria-hidden="true" />
               <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">
                 Or Continue with
               </span>
-              <div className="h-[1px] flex-1 bg-black/5" />
+              <div className="h-[1px] flex-1 bg-black/5" aria-hidden="true" />
             </div>
 
-            <motion.button
+            <button
               type="button"
               onClick={() => signinWithGoogle()}
-              whileHover={{ y: -2, backgroundColor: '#fcf9f5' }}
-              className="w-full border border-black/5 py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 group"
+              className="w-full border border-black/5 py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 group hover:bg-[#fcf9f5]"
+              aria-label="Sign in with your Google account"
             >
-              {/* Manual Google SVG Icon to prevent import error */}
               <svg
                 className="w-5 h-5 group-hover:scale-110 transition-transform"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   fill="#EA4335"
@@ -205,7 +233,7 @@ const LogIn = () => {
               <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover:text-[#1a1a1a]">
                 Google SSO
               </span>
-            </motion.button>
+            </button>
           </div>
 
           {/* Registration Footer */}
@@ -214,20 +242,24 @@ const LogIn = () => {
             <Link
               to="/register"
               className="text-[#E65100] ml-2 underline underline-offset-4 hover:text-[#1a1a1a] transition-colors font-black"
+              title="Create a new account"
             >
               Create Identity
             </Link>
           </p>
 
-          <div className="mt-8 flex justify-center items-center gap-2 text-green-600/50">
+          <div
+            className="mt-8 flex justify-center items-center gap-2 text-green-600/50"
+            aria-hidden="true"
+          >
             <ShieldCheck size={14} />
             <p className="text-[9px] font-black uppercase tracking-widest">
               Secured Patron Link
             </p>
           </div>
-        </motion.div>
+        </motion.section>
       </div>
-    </div>
+    </main>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabase/supabaseClient';
 import {
@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Zap,
   UtensilsCrossed,
-  Camera,
 } from 'lucide-react';
 import Loading from '../Loading/Loading';
 import { useNavigate } from 'react-router-dom';
@@ -19,58 +18,90 @@ const MenuSection = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const tabs = [
-    {
-      name: 'All Masterpieces',
-      filter: 'all',
-      icon: <UtensilsCrossed size={14} />,
-    },
-    { name: '🔥 Signature', filter: 'is_signature', icon: <Star size={14} /> },
-    { name: '💎 Premium', filter: 'is_premium', icon: <Diamond size={14} /> },
-    { name: '🌶️ Spicy', filter: 'is_spicy', icon: <Flame size={14} /> },
-    { name: '🍕 Pizza', filter: 'Pizza', type: 'category' },
-    { name: '🍛 Biryani', filter: 'Biryani', type: 'category' },
-    { name: '🍔 Burger', filter: 'Burger', type: 'category' },
-    { name: '🍹 Drinks', filter: 'Drinks', type: 'category' },
-  ];
+  // Performance: tabs অ্যারেটি মেমোইজ করা হয়েছে যাতে প্রতি রেন্ডারে নতুন মেমোরি না নেয়
+  const tabs = useMemo(
+    () => [
+      {
+        name: 'All Masterpieces',
+        filter: 'all',
+        icon: <UtensilsCrossed size={14} />,
+      },
+      {
+        name: '🔥 Signature',
+        filter: 'is_signature',
+        icon: <Star size={14} />,
+      },
+      { name: '💎 Premium', filter: 'is_premium', icon: <Diamond size={14} /> },
+      { name: '🌶️ Spicy', filter: 'is_spicy', icon: <Flame size={14} /> },
+      { name: '🍕 Pizza', filter: 'Pizza', type: 'category' },
+      { name: '🍛 Biryani', filter: 'Biryani', type: 'category' },
+      { name: '🍔 Burger', filter: 'Burger', type: 'category' },
+      { name: '🍹 Drinks', filter: 'Drinks', type: 'category' },
+    ],
+    [],
+  );
 
   useEffect(() => {
     const fetchMenuData = async () => {
       setLoading(true);
-      const { data, error } = await supabase.from('foods').select('*');
-      if (!error && data) {
-        setMenuItems(data);
+      try {
+        const { data, error } = await supabase.from('foods').select('*');
+        if (!error && data) {
+          setMenuItems(data);
+        }
+      } catch (err) {
+        console.error('Menu fetch error:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchMenuData();
   }, []);
 
-  const getFilteredItems = () => {
+  // Performance: ফিল্টারিং লজিক useMemo দিয়ে অপ্টিমাইজ করা হয়েছে
+  const filteredItems = useMemo(() => {
     const currentTab = tabs.find(t => t.name === activeTab);
+    if (!currentTab) return [];
     if (currentTab.filter === 'all') return menuItems;
     if (currentTab.type === 'category') {
       return menuItems.filter(item => item.category === currentTab.filter);
     }
     return menuItems.filter(item => item[currentTab.filter] === true);
-  };
+  }, [activeTab, menuItems, tabs]);
 
-  const filteredItems = getFilteredItems();
+  // Accessibility: কিবোর্ড এন্টার সাপোর্ট
+  const handleItemClick = useCallback(
+    id => {
+      navigate(`/foods/${id}`);
+    },
+    [navigate],
+  );
 
   if (loading)
     return (
-      <div className="h-96 flex items-center justify-center">
+      <div
+        className="h-96 flex items-center justify-center"
+        role="status"
+        aria-live="polite"
+      >
         <Loading />
+        <span className="sr-only">Loading menu...</span>
       </div>
     );
 
   return (
-    <section className="py-24 bg-[#fcf9f5] relative overflow-hidden font-sans">
-      {/* Background Decor */}
-      <div className="absolute top-10 left-10 opacity-[0.02] pointer-events-none select-none">
-        <h2 className="text-[12vw] font-black leading-none uppercase italic text-[#1a1a1a]">
+    <section
+      className="py-24 bg-[#fcf9f5] relative overflow-hidden font-sans"
+      aria-labelledby="menu-section-title"
+    >
+      {/* SEO: Background Decor changed from h2 to div for better heading hierarchy */}
+      <div
+        className="absolute top-10 left-10 opacity-[0.02] pointer-events-none select-none"
+        aria-hidden="true"
+      >
+        <div className="text-[12vw] font-black leading-none uppercase italic text-[#1a1a1a]">
           Archive
-        </h2>
+        </div>
       </div>
 
       <div className="container mx-auto px-6 lg:px-20 relative z-10">
@@ -79,27 +110,45 @@ const MenuSection = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             className="flex items-center justify-center gap-2 mb-4"
           >
-            <Zap size={14} className="text-[#E65100] fill-[#E65100]" />
+            <Zap
+              size={14}
+              className="text-[#E65100] fill-[#E65100]"
+              aria-hidden="true"
+            />
             <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#E65100]">
               Boutique Selection
             </span>
           </motion.div>
-          <h2 className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter italic uppercase leading-none">
+          <h2
+            id="menu-section-title"
+            className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter italic uppercase leading-none"
+          >
             Signature{' '}
             <span className="text-[#E65100] not-italic">Treasures.</span>
           </h2>
         </div>
 
-        {/* --- LUXURY TAB NAVIGATION --- */}
-        <div className="flex justify-center mb-20 overflow-x-auto pb-6 no-scrollbar">
-          <div className="flex bg-white/80 backdrop-blur-xl p-2 rounded-[2rem] border border-black/5 shadow-2xl min-w-max">
+        {/* --- LUXURY TAB NAVIGATION (Accessibility: role="tablist") --- */}
+        <nav
+          className="flex justify-center mb-20 overflow-x-auto pb-6 no-scrollbar"
+          aria-label="Menu categories"
+        >
+          <div
+            className="flex bg-white/80 backdrop-blur-xl p-2 rounded-[2rem] border border-black/5 shadow-2xl min-w-max"
+            role="tablist"
+          >
             {tabs.map(tab => (
               <button
                 key={tab.name}
+                role="tab"
+                aria-selected={activeTab === tab.name}
+                aria-controls="menu-grid"
+                id={`tab-${tab.name.replace(/\s+/g, '-').toLowerCase()}`}
                 onClick={() => setActiveTab(tab.name)}
-                className={`relative px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all duration-500 rounded-full
+                className={`relative px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all duration-500 rounded-full outline-none focus-visible:ring-2 focus-within:ring-[#E65100]
                   ${activeTab === tab.name ? 'text-white' : 'text-gray-400 hover:text-black'}
                 `}
               >
@@ -114,10 +163,15 @@ const MenuSection = () => {
               </button>
             ))}
           </div>
-        </div>
+        </nav>
 
-        {/* --- MENU LIST GRID --- */}
-        <div className="min-h-[400px]">
+        {/* --- MENU LIST GRID (Accessibility: role="tabpanel") --- */}
+        <div
+          id="menu-grid"
+          role="tabpanel"
+          aria-labelledby={`tab-${activeTab.replace(/\s+/g, '-').toLowerCase()}`}
+          className="min-h-[400px]"
+        >
           <AnimatePresence mode="wait">
             {filteredItems.length > 0 ? (
               <motion.div
@@ -133,8 +187,14 @@ const MenuSection = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.03 }}
-                    onClick={() => navigate(`/foods/${item.id}`)}
-                    className="group flex gap-6 items-center border-b border-black/5 pb-8 hover:border-[#E65100]/30 transition-all cursor-pointer"
+                    onClick={() => handleItemClick(item.id)}
+                    onKeyDown={e =>
+                      e.key === 'Enter' && handleItemClick(item.id)
+                    }
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View details for ${item.name}`}
+                    className="group flex gap-6 items-center border-b border-black/5 pb-8 hover:border-[#E65100]/30 transition-all cursor-pointer outline-none focus-visible:bg-black/5 rounded-xl"
                   >
                     {/* --- SMALL BOUTIQUE IMAGE --- */}
                     <div className="relative w-20 h-20 lg:w-24 lg:h-24 shrink-0 overflow-hidden rounded-[1.5rem] border-4 border-white shadow-xl group-hover:rotate-3 transition-transform duration-500">
@@ -142,8 +202,15 @@ const MenuSection = () => {
                         src={item.image_url}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         alt={item.name}
+                        loading="lazy" // Performance
+                        decoding="async" // Performance
+                        width="96" // Performance: Layout shift prevention
+                        height="96"
                       />
-                      <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+                      <div
+                        className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"
+                        aria-hidden="true"
+                      />
                     </div>
 
                     {/* --- CONTENT AREA --- */}
@@ -158,6 +225,7 @@ const MenuSection = () => {
                               <Flame
                                 size={14}
                                 className="text-red-500 fill-red-500 animate-pulse"
+                                aria-label="Spicy item"
                               />
                             )}
                           </div>
@@ -168,12 +236,18 @@ const MenuSection = () => {
                         </div>
 
                         {/* Price Area */}
-                        <div className="flex flex-col items-end shrink-0">
+                        <div
+                          className="flex flex-col items-end shrink-0"
+                          aria-label={`Price: ${item.price_usd} dollars`}
+                        >
                           <span className="text-xl font-black text-[#1a1a1a] tracking-tighter italic">
                             ${item.price_usd}
                           </span>
                           {item.old_price_usd && (
-                            <span className="text-[10px] text-gray-300 line-through font-bold italic tracking-tighter">
+                            <span
+                              className="text-[10px] text-gray-300 line-through font-bold italic tracking-tighter"
+                              aria-label="Original price"
+                            >
                               ${item.old_price_usd}
                             </span>
                           )}
@@ -181,7 +255,10 @@ const MenuSection = () => {
                       </div>
 
                       {/* Tags Bar */}
-                      <div className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div
+                        className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                        aria-hidden="true"
+                      >
                         {item.is_signature && (
                           <span className="text-[8px] font-black uppercase text-[#E65100] tracking-widest border border-[#E65100]/20 px-2 py-0.5 rounded-md">
                             Signature
@@ -198,26 +275,26 @@ const MenuSection = () => {
                 ))}
               </motion.div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+              <div
                 className="flex flex-col items-center justify-center py-32 opacity-20"
+                role="status"
               >
-                <UtensilsCrossed size={64} strokeWidth={1} />
+                <UtensilsCrossed size={64} strokeWidth={1} aria-hidden="true" />
                 <p className="mt-4 font-black uppercase tracking-[0.4em] text-xs">
                   Selection coming soon
                 </p>
-              </motion.div>
+              </div>
             )}
           </AnimatePresence>
         </div>
 
         {/* --- VIEW ALL ACTION --- */}
         <div className="mt-24 flex justify-center">
-          <motion.button
+          <button
+            type="button"
             onClick={() => navigate('/allFoods')}
-            whileHover={{ scale: 1.05 }}
-            className="group flex items-center gap-6 bg-[#1a1a1a] text-white px-10 py-5 rounded-full shadow-2xl hover:bg-[#E65100] transition-all"
+            className="group flex items-center gap-6 bg-[#1a1a1a] text-white px-10 py-5 rounded-full shadow-2xl hover:bg-[#E65100] transition-all outline-none focus-visible:ring-4 focus-visible:ring-orange-200"
+            aria-label="Explore full menu archive"
           >
             <span className="text-[10px] font-black uppercase tracking-[0.4em]">
               Explore Full Archive
@@ -225,8 +302,9 @@ const MenuSection = () => {
             <ChevronRight
               size={18}
               className="group-hover:translate-x-2 transition-transform"
+              aria-hidden="true"
             />
-          </motion.button>
+          </button>
         </div>
       </div>
     </section>

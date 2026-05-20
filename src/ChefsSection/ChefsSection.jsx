@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Quote, Sparkles } from 'lucide-react';
 
@@ -37,6 +37,7 @@ const chefsData = [
   },
 ];
 
+// Performance: কম্পোনেন্টের বাইরে নিয়ে আসা হয়েছে যাতে প্রতি রেন্ডারে নতুন করে তৈরি না হয়
 const SocialIcons = {
   Facebook: () => (
     <svg
@@ -49,6 +50,7 @@ const SocialIcons = {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
     >
       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
     </svg>
@@ -64,6 +66,7 @@ const SocialIcons = {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
     >
       <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
@@ -81,6 +84,7 @@ const SocialIcons = {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
     >
       <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
     </svg>
@@ -88,51 +92,62 @@ const SocialIcons = {
 };
 
 const ChefsSection = () => {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2 },
-    },
-  };
+  // Performance: এনিমেশন ভেরিয়েন্ট মেমোইজ করা হয়েছে
+  const containerVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0 },
+      visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.2 },
+      },
+    }),
+    [],
+  );
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
-    },
-  };
+  const cardVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: 50 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      },
+    }),
+    [],
+  );
 
   return (
-    <section className="py-32 bg-[#fcf9f5] overflow-hidden">
+    <section
+      className="py-32 bg-[#fcf9f5] overflow-hidden"
+      aria-labelledby="chefs-heading"
+    >
       <div className="container mx-auto px-6 lg:px-20">
         {/* --- SECTION HEADER --- */}
         <div className="flex flex-col items-center mb-24 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
             className="flex items-center gap-2 mb-6 bg-orange-100/50 px-4 py-1.5 rounded-full"
           >
-            <Sparkles size={14} className="text-[#E65100]" />
+            <Sparkles size={14} className="text-[#E65100]" aria-hidden="true" />
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E65100]">
               The Masterminds
             </span>
           </motion.div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+          <h2
+            id="chefs-heading"
             className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter leading-none italic uppercase"
           >
             Culinary{' '}
             <span className="text-[#E65100] not-italic">Artisans.</span>
-          </motion.h2>
+          </h2>
 
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
             className="mt-6 text-gray-400 max-w-lg text-sm font-medium uppercase tracking-widest leading-relaxed"
           >
             Our chefs are trained specifically to translate passion into every
@@ -157,14 +172,21 @@ const ChefsSection = () => {
               {/* Image Container */}
               <div className="relative w-full aspect-[4/5] rounded-[3.5rem] overflow-hidden shadow-2xl border-[10px] border-white group-hover:border-[#E65100]/10 transition-all duration-700">
                 {/* Background Decor */}
-                <div className="absolute inset-0 bg-[#1a1a1a]/10 group-hover:bg-transparent transition-all duration-500" />
+                <div
+                  className="absolute inset-0 bg-[#1a1a1a]/10 group-hover:bg-transparent transition-all duration-500"
+                  aria-hidden="true"
+                />
 
                 <motion.img
                   src={chef.image}
-                  alt={chef.name}
+                  alt={`Portrait of ${chef.name}, ${chef.title}`} // SEO: Descriptive alt text
                   whileHover={{ scale: 1.1 }}
                   transition={{ duration: 0.8 }}
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                  loading="lazy" // Performance: Lazy loading
+                  decoding="async" // Performance: Async decoding
+                  width="300" // Performance: Layout shift prevention
+                  height="375"
                 />
 
                 {/* Social Overlay */}
@@ -178,12 +200,15 @@ const ChefsSection = () => {
                       return (
                         <motion.a
                           key={i}
-                          href="#"
+                          href={chef.socials[platform.toLowerCase()]}
+                          target="_blank"
+                          rel="noopener noreferrer" // Best Practices: Security
                           whileHover={{
                             scale: 1.2,
                             backgroundColor: '#E65100',
                           }}
                           className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white border border-white/20 transition-colors"
+                          aria-label={`Follow ${chef.name} on ${platform}`} // Accessibility: ARIA label
                         >
                           <Icon />
                         </motion.a>
@@ -193,7 +218,10 @@ const ChefsSection = () => {
                 </div>
 
                 {/* Quote Icon Badge */}
-                <div className="absolute top-6 right-6 w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#E65100] shadow-xl group-hover:rotate-12 transition-transform">
+                <div
+                  className="absolute top-6 right-6 w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#E65100] shadow-xl group-hover:rotate-12 transition-transform"
+                  aria-hidden="true"
+                >
                   <Quote size={18} fill="currentColor" className="opacity-20" />
                 </div>
               </div>
@@ -204,7 +232,10 @@ const ChefsSection = () => {
                   {chef.name}
                 </h3>
                 <div className="flex items-center justify-center gap-2">
-                  <div className="h-[1px] w-4 bg-[#E65100]"></div>
+                  <div
+                    className="h-[1px] w-4 bg-[#E65100]"
+                    aria-hidden="true"
+                  ></div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em]">
                     {chef.title}
                   </p>
