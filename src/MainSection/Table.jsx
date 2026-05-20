@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabase/supabaseClient';
 import Swal from 'sweetalert2';
@@ -11,19 +11,18 @@ import {
   Calendar,
 } from 'lucide-react';
 
-const Table = ({ applications = [] }) => {
+// Performance: React.memo ব্যবহার করা হয়েছে যাতে অপ্রয়োজনীয় রি-রেন্ডার না হয়
+const Table = memo(({ applications = [] }) => {
   const [lists, setLists] = useState(applications);
 
-  // প্রপস আপডেট হলে স্টেট আপডেট করা
   useEffect(() => {
     setLists(applications);
   }, [applications]);
 
-  // --- SUPABASE DELETE LOGIC ---
-  const handleDelete = async id => {
+  const handleDelete = async (id, foodName) => {
     const result = await Swal.fire({
       title: 'De-authorize Request?',
-      text: 'This order log will be permanently removed from the ledger.',
+      text: `Order for "${foodName || 'this item'}" will be permanently removed.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#1a1a1a',
@@ -43,7 +42,7 @@ const Table = ({ applications = [] }) => {
       const { error } = await supabase
         .from('applications')
         .delete()
-        .eq('id', id); // Supabase uses 'id', not '_id'
+        .eq('id', id);
 
       if (!error) {
         setLists(prev => prev.filter(item => item.id !== id));
@@ -63,37 +62,61 @@ const Table = ({ applications = [] }) => {
 
   return (
     <div className="w-full bg-white rounded-[3rem] shadow-sm border border-black/5 overflow-hidden my-12 relative">
-      {/* Table Header Decor */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#E65100] to-orange-300 opacity-20" />
+      {/* Accessibility: Decorative element hidden from screen readers */}
+      <div
+        className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#E65100] to-orange-300 opacity-20"
+        aria-hidden="true"
+      />
 
       <div className="overflow-x-auto">
-        <table className="min-w-full text-left border-collapse">
+        <table
+          className="min-w-full text-left border-collapse"
+          aria-label="Orders and Applications Ledger"
+        >
           <thead>
             <tr className="bg-[#fcf9f5] border-b border-black/5">
-              <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+              <th
+                scope="col"
+                className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400"
+              >
                 <div className="flex items-center gap-2">
-                  <Hash size={12} /> Ref
+                  <Hash size={12} aria-hidden="true" /> Ref
                 </div>
               </th>
-              <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+              <th
+                scope="col"
+                className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400"
+              >
                 <div className="flex items-center gap-2">
-                  <Utensils size={12} /> Delicacy
+                  <Utensils size={12} aria-hidden="true" /> Delicacy
                 </div>
               </th>
-              <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+              <th
+                scope="col"
+                className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400"
+              >
                 <div className="flex items-center gap-2">
-                  <Calendar size={12} /> Date
+                  <Calendar size={12} aria-hidden="true" /> Date
                 </div>
               </th>
-              <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+              <th
+                scope="col"
+                className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400"
+              >
                 <div className="flex items-center gap-2">
-                  <CreditCard size={12} /> Value
+                  <CreditCard size={12} aria-hidden="true" /> Value
                 </div>
               </th>
-              <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+              <th
+                scope="col"
+                className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400"
+              >
                 Status
               </th>
-              <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 text-right">
+              <th
+                scope="col"
+                className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 text-right"
+              >
                 Actions
               </th>
             </tr>
@@ -119,7 +142,7 @@ const Table = ({ applications = [] }) => {
                     {/* Index / ID */}
                     <td className="px-8 py-6">
                       <span className="text-[11px] font-mono text-gray-300">
-                        0{index + 1}
+                        {String(index + 1).padStart(2, '0')}
                       </span>
                     </td>
 
@@ -129,8 +152,12 @@ const Table = ({ applications = [] }) => {
                         <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gray-100 shadow-inner">
                           <img
                             src={list.foods?.image_url}
-                            alt=""
+                            alt={list.foods?.name || 'Food item'}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            loading="lazy" // Performance
+                            decoding="async" // Performance
+                            width="48" // Performance: Layout shift prevention
+                            height="48"
                           />
                         </div>
                         <div>
@@ -146,13 +173,16 @@ const Table = ({ applications = [] }) => {
 
                     {/* Date */}
                     <td className="px-8 py-6">
-                      <p className="text-xs font-bold text-gray-500">
+                      <time
+                        dateTime={list.created_at}
+                        className="text-xs font-bold text-gray-500"
+                      >
                         {new Date(list.created_at).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
                         })}
-                      </p>
+                      </time>
                     </td>
 
                     {/* Price */}
@@ -167,8 +197,10 @@ const Table = ({ applications = [] }) => {
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-2 h-2 rounded-full ${list.status === 'pending' ? 'bg-orange-400 animate-pulse' : 'bg-green-500'}`}
+                          aria-hidden="true"
                         />
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                          <span className="sr-only">Status: </span>
                           {list.status}
                         </span>
                       </div>
@@ -177,12 +209,14 @@ const Table = ({ applications = [] }) => {
                     {/* Actions */}
                     <td className="px-8 py-6 text-right">
                       <motion.button
+                        type="button" // Best Practice
                         whileHover={{ scale: 1.1, backgroundColor: '#fee2e2' }}
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDelete(list.id)}
+                        onClick={() => handleDelete(list.id, list.foods?.name)}
                         className="p-3 text-red-400 rounded-xl transition-colors inline-flex items-center justify-center border border-transparent hover:border-red-100"
+                        aria-label={`Delete order for ${list.foods?.name || 'this item'}`}
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={18} aria-hidden="true" />
                       </motion.button>
                     </td>
                   </motion.tr>
@@ -190,8 +224,15 @@ const Table = ({ applications = [] }) => {
               ) : (
                 <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <td colSpan="6" className="py-20 text-center">
-                    <div className="flex flex-col items-center justify-center opacity-20">
-                      <ShoppingBag size={64} strokeWidth={1} />
+                    <div
+                      className="flex flex-col items-center justify-center opacity-20"
+                      role="status"
+                    >
+                      <ShoppingBag
+                        size={64}
+                        strokeWidth={1}
+                        aria-hidden="true"
+                      />
                       <p className="mt-4 font-black uppercase tracking-[0.5em] text-xs">
                         Ledger is empty
                       </p>
@@ -205,6 +246,8 @@ const Table = ({ applications = [] }) => {
       </div>
     </div>
   );
-};
+});
+
+Table.displayName = 'Table';
 
 export default Table;

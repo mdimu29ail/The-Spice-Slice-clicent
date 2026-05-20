@@ -1,47 +1,64 @@
+import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
-import Layout from '../Layout/Layout';
-import LogIn from '../Pages/LogIn';
-import Register from '../Pages/Register';
-import Home from '../Home/Home';
-import PrivateRouter from '../Private/PrivateRouter';
-import AdminRoute from '../Auth/AdminRoute';
-import AllFoods from '../Routers/AllFoods/AllFoods';
-import Details from '../MainSection/Details';
-import GalleryPage from '../Routers/GalleryPage/GalleryPage';
+import Loading from '../Loading/Loading';
 
-// --- USER DASHBOARD COMPONENTS ---
-import DashbordLayout from '../Layout/DashbordLayout';
-import Dashboard from '../Dashboard/Dashboard';
-import PurchaseList from '../MainSection/PurchaseList';
-import ProfileCard from '../Routers/Profile';
-import MyFoods from '../MyFoods/MyFoods';
+// --- Performance: Lazy Loading (Code Splitting) ---
+// এর ফলে ইউজার যে পেজে যাবে শুধু সেই পেজের কোড লোড হবে, যা ইনিশিয়াল লোড টাইম কমাবে।
+const Layout = lazy(() => import('../Layout/Layout'));
+const LogIn = lazy(() => import('../Pages/LogIn'));
+const Register = lazy(() => import('../Pages/Register'));
+const Home = lazy(() => import('../Home/Home'));
+const PrivateRouter = lazy(() => import('../Private/PrivateRouter'));
+const AdminRoute = lazy(() => import('../Auth/AdminRoute'));
+const AllFoods = lazy(() => import('../Routers/AllFoods/AllFoods'));
+const Details = lazy(() => import('../MainSection/Details'));
+const GalleryPage = lazy(() => import('../Routers/GalleryPage/GalleryPage'));
 
-// --- ADMIN DASHBOARD COMPONENTS ---
-import AdminLayout from '../AdminDashboard/AdminLayout';
-import AdminHome from '../AdminDashboard/AdminHome';
-import ManageFoods from '../AdminDashboard/ManageFoods';
-import ManageOrders from '../AdminDashboard/ManageOrders';
-import UserManagement from '../AdminDashboard/UserManagement';
-import AdminStats from '../AdminDashboard/AdminStats';
-import AddFoods from '../Routers/AddFoods/AddFoods';
-import Update from '../Routers/Update/Update';
+// User Dashboard
+const DashbordLayout = lazy(() => import('../Layout/DashbordLayout'));
+const Dashboard = lazy(() => import('../Dashboard/Dashboard'));
+const PurchaseList = lazy(() => import('../MainSection/PurchaseList'));
+const ProfileCard = lazy(() => import('../Routers/Profile'));
+const MyFoods = lazy(() => import('../MyFoods/MyFoods'));
 
-// --- PAYMENT & ERROR ---
-import OrderNow from '../MainSection/OrderNow';
-import PaymentPage from '../Payment/PaymentPage';
-import ErrorPage from '../Pages/ErrorPage';
-import CheckoutPage from '../Payment/CheckoutPage';
-import TransactionHistory from '../Payment/TransactionHistory';
-import AdminPayments from '../AdminDashboard/AdminPayments';
-import AddReview from '../AdminDashboard/AddReview';
-import ManageLocation from '../AdminDashboard/ManageLocation';
+// Admin Dashboard
+const AdminLayout = lazy(() => import('../AdminDashboard/AdminLayout'));
+const AdminHome = lazy(() => import('../AdminDashboard/AdminHome'));
+const ManageFoods = lazy(() => import('../AdminDashboard/ManageFoods'));
+const ManageOrders = lazy(() => import('../AdminDashboard/ManageOrders'));
+const UserManagement = lazy(() => import('../AdminDashboard/UserManagement'));
+const AdminStats = lazy(() => import('../AdminDashboard/AdminStats'));
+const AdminPayments = lazy(() => import('../AdminDashboard/AdminPayments'));
+const AddReview = lazy(() => import('../AdminDashboard/AddReview'));
+const ManageLocation = lazy(() => import('../AdminDashboard/ManageLocation'));
+const AddFoods = lazy(() => import('../Routers/AddFoods/AddFoods'));
+const Update = lazy(() => import('../Routers/Update/Update'));
+
+// Payment & Error
+const OrderNow = lazy(() => import('../MainSection/OrderNow'));
+const PaymentPage = lazy(() => import('../Payment/PaymentPage'));
+const ErrorPage = lazy(() => import('../Pages/ErrorPage'));
+const CheckoutPage = lazy(() => import('../Payment/CheckoutPage'));
+const TransactionHistory = lazy(() => import('../Payment/TransactionHistory'));
+
+// Accessibility: লোডিং স্টেটের জন্য একটি কমন র‍্যাপার
+const SuspenseLayout = ({ children }) => (
+  <Suspense fallback={<Loading />}>{children}</Suspense>
+);
 
 const router = createBrowserRouter([
-  // --- ১. পাবলিক রুটস ---
   {
     path: '/',
-    element: <Layout />,
-    errorElement: <ErrorPage />,
+    element: (
+      <SuspenseLayout>
+        <Layout />
+      </SuspenseLayout>
+    ),
+    errorElement: (
+      <SuspenseLayout>
+        <ErrorPage />
+      </SuspenseLayout>
+    ),
     children: [
       { index: true, element: <Home /> },
       { path: 'login', element: <LogIn /> },
@@ -66,7 +83,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: '/payment/checkout',
+        path: 'payment/checkout', // Best Practice: স্লাশ সরানো হয়েছে (Relative Path)
         element: (
           <PrivateRouter>
             <CheckoutPage />
@@ -76,54 +93,58 @@ const router = createBrowserRouter([
     ],
   },
 
-  // --- ২. ইউজার ড্যাশবোর্ড রাউটস (/dashboard) ---
+  // --- ২. ইউজার ড্যাশবোর্ড রাউটস ---
   {
     path: '/dashboard',
     element: (
       <PrivateRouter>
-        <DashbordLayout />
+        <SuspenseLayout>
+          <DashbordLayout />
+        </SuspenseLayout>
       </PrivateRouter>
     ),
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'profile', element: <ProfileCard /> },
       { path: 'purchaseList', element: <PurchaseList /> },
-      { path: 'myFoods', element: <MyFoods /> }, // ✅ ফিক্সড: স্লাশ সরানো হয়েছে
-      { path: 'addFoods', element: <AddFoods /> }, // ✅ নতুন যোগ করা হয়েছে (ইউজার অ্যাড অপশন)
+      { path: 'myFoods', element: <MyFoods /> },
+      { path: 'addFoods', element: <AddFoods /> },
       { path: 'transactions', element: <TransactionHistory /> },
     ],
   },
 
-  // --- ৩. অ্যাডমিন ড্যাশবোর্ড রাউটস (/admin) ---
+  // --- ৩. অ্যাডমিন ড্যাশবোর্ড রাউটস ---
   {
     path: '/admin',
     element: (
       <AdminRoute>
-        <AdminLayout />
+        <SuspenseLayout>
+          <AdminLayout />
+        </SuspenseLayout>
       </AdminRoute>
     ),
     children: [
       { index: true, element: <AdminHome /> },
       { path: 'manage-foods', element: <ManageFoods /> },
       { path: 'add-food', element: <AddFoods /> },
-
       { path: 'add-review', element: <AddReview /> },
       { path: 'manage-location', element: <ManageLocation /> },
       { path: 'update-food/:id', element: <Update /> },
       { path: 'manage-orders', element: <ManageOrders /> },
-      {
-        path: 'payments',
-        element: <AdminPayments />,
-      },
+      { path: 'payments', element: <AdminPayments /> },
       { path: 'users', element: <UserManagement /> },
       { path: 'stats', element: <AdminStats /> },
     ],
   },
 
-  // ৪. সব ভুল ইউআরএল-এর জন্য
+  // ৪. ওয়াইল্ডকার্ড রাউট (SEO & Best Practice)
   {
     path: '*',
-    element: <ErrorPage />,
+    element: (
+      <SuspenseLayout>
+        <ErrorPage />
+      </SuspenseLayout>
+    ),
   },
 ]);
 

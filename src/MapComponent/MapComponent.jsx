@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   MapPin,
   Sparkles,
@@ -9,28 +9,35 @@ import {
   Loader2,
   Info,
   CheckCircle2,
+  Phone,
 } from 'lucide-react';
 import { supabase } from '../supabase/supabaseClient';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// --- ১. ডাইনামিক কালার মার্কার ফাংশন (Performance: Moved outside to prevent recreation) ---
+// --- ১. ডাইনামিক কালার মার্কার ফাংশন ---
 const createCustomIcon = isActive => {
+  // সিলেক্টেড হলে কালো (#1a1a1a), না হলে অরেঞ্জ (#E65100)
   const bgColor = isActive ? '#1a1a1a' : '#E65100';
   const borderColor = isActive ? '#E65100' : '#ffffff';
 
   return L.divIcon({
     html: `
-      <div class="relative flex items-center justify-center" role="presentation">
+      <div class="relative flex items-center justify-center">
+        <!-- সিলেক্টেড মার্কারের জন্য পালস এনিমেশন -->
         ${isActive ? '<div class="absolute w-12 h-12 bg-[#E65100] rounded-full animate-ping opacity-30"></div>' : ''}
+        
+        <!-- মার্কার পিন -->
         <div class="relative flex items-center justify-center w-9 h-9 rounded-full border-2 shadow-2xl transition-all duration-500 ${isActive ? 'scale-125' : 'scale-100'}" 
              style="background-color: ${bgColor}; border-color: ${borderColor};">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
         </div>
-        <div class="absolute -bottom-1 w-2.5 h-2.5 rotate-45 shadow-lg" style="background-color: ${bgColor};" aria-hidden="true"></div>
+        
+        <!-- নিচের ছোট অ্যারো -->
+        <div class="absolute -bottom-1 w-2.5 h-2.5 rotate-45 shadow-lg" style="background-color: ${bgColor};"></div>
       </div>
     `,
     className: 'custom-boutique-marker',
@@ -84,51 +91,34 @@ const MapComponent = () => {
     fetchLocations();
   }, []);
 
-  // Performance: useCallback used for event handler
-  const handleBranchSelect = useCallback(loc => {
+  const handleBranchSelect = loc => {
     setActiveLocation(loc);
     setMapCenter([loc.lat, loc.lng]);
     setZoom(16);
-  }, []);
+  };
 
   if (loading)
     return (
-      <div
-        className="h-[600px] flex items-center justify-center bg-[#fcf9f5]"
-        role="alert"
-        aria-busy="true"
-      >
-        <Loader2
-          className="animate-spin text-[#E65100]"
-          size={40}
-          aria-hidden="true"
-        />
-        <span className="sr-only">Loading boutique map...</span>
+      <div className="h-[600px] flex items-center justify-center bg-[#fcf9f5]">
+        <Loader2 className="animate-spin text-[#E65100]" size={40} />
       </div>
     );
 
   return (
-    <section
-      className="py-24 bg-[#fcf9f5] overflow-hidden font-sans selection:bg-orange-100"
-      aria-labelledby="map-heading"
-    >
+    <section className="py-24 bg-[#fcf9f5] overflow-hidden font-sans selection:bg-orange-100">
       <div className="container mx-auto px-6 lg:px-20">
         <div className="flex flex-col items-center mb-20 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
             className="flex items-center gap-2 mb-4 bg-orange-100/50 px-4 py-1.5 rounded-full"
           >
-            <Sparkles size={14} className="text-[#E65100]" aria-hidden="true" />
+            <Sparkles size={14} className="text-[#E65100]" />
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E65100]">
               Global Presence
             </span>
           </motion.div>
-          <h2
-            id="map-heading"
-            className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter leading-none italic uppercase"
-          >
+          <h2 className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter leading-none italic uppercase">
             The Atelier{' '}
             <span className="text-[#E65100] not-italic">Network.</span>
           </h2>
@@ -139,7 +129,6 @@ const MapComponent = () => {
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
             className="lg:col-span-7 relative group"
           >
             <div className="h-[600px] w-full rounded-[3.5rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border-[12px] border-white relative z-10">
@@ -148,12 +137,8 @@ const MapComponent = () => {
                 zoom={zoom}
                 scrollWheelZoom={false}
                 className="h-full w-full grayscale-[0.2]"
-                aria-label="Interactive map showing boutique locations"
               >
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                />
+                <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
 
                 {locations.map(loc => {
                   const isActive = activeLocation?.id === loc.id;
@@ -161,7 +146,7 @@ const MapComponent = () => {
                     <Marker
                       key={loc.id}
                       position={[loc.lat, loc.lng]}
-                      icon={createCustomIcon(isActive)}
+                      icon={createCustomIcon(isActive)} // এখানে ডাইনামিক আইকন কল করা হয়েছে
                       eventHandlers={{ click: () => handleBranchSelect(loc) }}
                     >
                       <Popup>
@@ -169,7 +154,7 @@ const MapComponent = () => {
                           <p className="font-black uppercase text-[10px] text-[#E65100]">
                             The Spice Slice
                           </p>
-                          <p className="text-[9px] font-bold text-gray-500 leading-tight">
+                          <p className="text-[9px] font-bold text-gray-400 leading-tight">
                             {loc.address}
                           </p>
                         </div>
@@ -195,7 +180,11 @@ const MapComponent = () => {
           </motion.div>
 
           {/* --- RIGHT: ATELIER DIRECTORY --- */}
-          <div className="lg:col-span-5 space-y-8 lg:pl-6">
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            className="lg:col-span-5 space-y-8 lg:pl-6"
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
                 Atelier Directory
@@ -205,22 +194,16 @@ const MapComponent = () => {
               </span>
             </div>
 
-            <div
-              className="space-y-4 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar"
-              role="list"
-              aria-label="List of boutique locations"
-            >
+            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
               {locations.length > 0 ? (
                 locations.map(loc => {
                   const isActive = activeLocation?.id === loc.id;
                   return (
-                    <button
+                    <motion.div
                       key={loc.id}
-                      type="button"
-                      role="listitem"
-                      aria-current={isActive ? 'true' : 'false'}
+                      whileHover={{ x: 5 }}
                       onClick={() => handleBranchSelect(loc)}
-                      className={`w-full text-left relative p-6 rounded-[2.5rem] border-2 transition-all duration-500 flex items-start gap-5 group overflow-hidden
+                      className={`relative p-6 rounded-[2.5rem] border-2 cursor-pointer transition-all duration-500 flex items-start gap-5 group overflow-hidden
                          ${isActive ? 'border-[#E65100] bg-[#1a1a1a] shadow-2xl scale-[1.02]' : 'border-transparent bg-white hover:border-black/5 shadow-sm'}
                        `}
                     >
@@ -228,7 +211,6 @@ const MapComponent = () => {
                         className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500
                          ${isActive ? 'bg-[#E65100] text-white rotate-[360deg]' : 'bg-[#fcf9f5] text-gray-300 group-hover:text-[#E65100]'}
                        `}
-                        aria-hidden="true"
                       >
                         {isActive ? (
                           <CheckCircle2 size={20} />
@@ -246,19 +228,12 @@ const MapComponent = () => {
                           {loc.address}
                         </p>
                       </div>
-                    </button>
+                    </motion.div>
                   );
                 })
               ) : (
-                <div
-                  className="bg-white p-10 rounded-[3rem] border border-black/5 text-center"
-                  role="status"
-                >
-                  <Info
-                    className="mx-auto text-gray-300 mb-4"
-                    size={32}
-                    aria-hidden="true"
-                  />
+                <div className="bg-white p-10 rounded-[3rem] border border-black/5 text-center">
+                  <Info className="mx-auto text-gray-300 mb-4" size={32} />
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
                     No Ateliers Established
                   </p>
@@ -266,14 +241,13 @@ const MapComponent = () => {
               )}
             </div>
 
-            <button
-              type="button"
+            <motion.button
+              whileHover={{ scale: 1.02 }}
               className="w-full py-5 bg-[#1a1a1a] text-white rounded-full font-black uppercase text-[10px] tracking-[0.3em] shadow-xl hover:bg-[#E65100] transition-all flex items-center justify-center gap-3"
-              aria-label="Request a private tour of our boutique"
             >
-              Request Private Tour <ArrowRight size={16} aria-hidden="true" />
-            </button>
-          </div>
+              Request Private Tour <ArrowUpRight size={16} />
+            </motion.button>
+          </motion.div>
         </div>
       </div>
     </section>

@@ -1,6 +1,13 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useMemo,
+  useCallback,
+} from 'react';
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async'; // SEO এর জন্য
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -11,52 +18,52 @@ import {
   Menu,
   X,
   Bell,
-  Search,
   Zap,
   History,
-  Sparkles,
-  RefreshCw,
-  Trash2,
-  ShieldCheck, // অ্যাডমিন আইকনের জন্য
-  ArrowRightLeft, // সুইচ আইকনের জন্য
+  ArrowRightLeft,
 } from 'lucide-react';
 import { AuthContext } from '../Auth/AuthContext';
 import { supabase } from '../supabase/supabaseClient';
 import Swal from 'sweetalert2';
 
 const DashboardLayout = () => {
-  const { user, loading, logOut, isAdmin } = useContext(AuthContext); // isAdmin নেওয়া হয়েছে
+  const { user, loading, logOut, isAdmin } = useContext(AuthContext);
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
   const [profile, setProfile] = useState(null);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([]); // নোটিফিকেশন লজিক কানেক্টেড রাখা হয়েছে
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const navigate = useNavigate();
 
-  // রেসপনসিভ লজিক...
+  // Performance: Resize listener অপ্টিমাইজ করা হয়েছে
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 1024) setSidebarOpen(false);
       else setSidebarOpen(true);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // প্রোফাইল ও নোটিফিকেশন লজিক (আগের মতোই থাকবে)...
+  // Profile Sync Logic
   useEffect(() => {
     if (!user?.id) return;
     const fetchProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      if (data) setProfile(data);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (!error) setProfile(data);
+      } catch (err) {
+        console.error('Profile sync error:', err);
+      }
     };
     fetchProfile();
   }, [user?.id]);
 
-  const handleSignOut = async () => {
+  // Best Practices: Logout with confirmation
+  const handleSignOut = useCallback(async () => {
     const result = await Swal.fire({
       title: 'Wait, Patron!',
       text: 'Are you sure you want to leave the boutique?',
@@ -72,41 +79,65 @@ const DashboardLayout = () => {
       await logOut();
       navigate('/');
     }
-  };
+  }, [logOut, navigate]);
 
-  const userLinks = [
-    {
-      name: 'Overview',
-      path: '/dashboard',
-      icon: <LayoutDashboard size={20} />,
-      end: true,
-    },
-    {
-      name: 'My Creations',
-      path: '/dashboard/myFoods',
-      icon: <UtensilsCrossed size={20} />,
-    },
-    {
-      name: 'Order Status',
-      path: '/dashboard/purchaseList',
-      icon: <ShoppingBag size={20} />,
-    },
-    {
-      name: 'The Ledger',
-      path: '/dashboard/transactions',
-      icon: <History size={20} />,
-    },
-    {
-      name: 'Profile Settings',
-      path: '/dashboard/profile',
-      icon: <UserCircle size={20} />,
-    },
-  ];
+  // Performance: Navigation links memoized
+  const userLinks = useMemo(
+    () => [
+      {
+        name: 'Overview',
+        path: '/dashboard',
+        icon: <LayoutDashboard size={20} />,
+        end: true,
+      },
+      {
+        name: 'My Creations',
+        path: '/dashboard/myFoods',
+        icon: <UtensilsCrossed size={20} />,
+      },
+      {
+        name: 'Order Status',
+        path: '/dashboard/purchaseList',
+        icon: <ShoppingBag size={20} />,
+      },
+      {
+        name: 'The Ledger',
+        path: '/dashboard/transactions',
+        icon: <History size={20} />,
+      },
+      {
+        name: 'Profile Settings',
+        path: '/dashboard/profile',
+        icon: <UserCircle size={20} />,
+      },
+    ],
+    [],
+  );
 
   if (loading) return null;
 
   return (
     <div className="flex min-h-screen bg-[#fcf9f5] font-sans selection:bg-orange-100 relative">
+      {/* SEO: ড্যাশবোর্ড পেজগুলো যাতে গুগল ইনডেক্স না করে (Security Best Practice) */}
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+        <title>Patron Dashboard | The Spice Slice</title>
+      </Helmet>
+
+      {/* --- MOBILE OVERLAY --- */}
+      <AnimatePresence>
+        {isSidebarOpen && window.innerWidth <= 1024 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] lg:hidden"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
       {/* --- SIDEBAR --- */}
       <motion.aside
         initial={false}
@@ -116,14 +147,21 @@ const DashboardLayout = () => {
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="fixed h-[96vh] top-[2vh] left-4 bg-[#1a1a1a] rounded-[3rem] shadow-2xl z-[60] flex flex-col p-6 border border-white/5 overflow-hidden"
+        role="navigation"
+        aria-label="Sidebar Navigation"
       >
         {/* Logo Section */}
         <div className="flex items-center gap-3 mb-12 px-2">
-          <div className="w-11 h-11 bg-[#E65100] rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
+          <div
+            className="w-11 h-11 bg-[#E65100] rounded-2xl flex items-center justify-center shrink-0 shadow-lg -ml-3"
+            aria-hidden="true"
+          >
             <img
               src="https://i.ibb.co/MxBvKxGY/Chat-GPT-Image-AM.png"
               className="w-7 brightness-200"
-              alt="logo"
+              alt="The Spice Slice Logo"
+              width="28"
+              height="28"
             />
           </div>
           {isSidebarOpen && (
@@ -133,38 +171,44 @@ const DashboardLayout = () => {
           )}
         </div>
 
-        <nav className="flex-1 space-y-2">
-          {userLinks.map(item => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              end={item.end}
-              className={({ isActive }) =>
-                `relative group flex items-center gap-4 -ml-1 p-3 rounded-2xl transition-all duration-300 ${isActive ? 'text-white bg-white/10' : 'text-gray-500 hover:text-white'}`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    className={`shrink-0 transition-colors ${isActive ? 'text-[#E65100]' : ''}`}
-                  >
-                    {item.icon}
-                  </span>
-                  {isSidebarOpen && (
-                    <span className="font-bold text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
-                      {item.name}
-                    </span>
+        <nav className="flex-1 space-y-2 overflow-y-auto no-scrollbar">
+          <ul className="space-y-2">
+            {userLinks.map(item => (
+              <li key={item.name}>
+                <NavLink
+                  to={item.path}
+                  end={item.end}
+                  aria-label={`Go to ${item.name}`}
+                  className={({ isActive }) =>
+                    `relative group flex items-center gap-4 -ml-1 p-3 rounded-2xl transition-all duration-300 ${isActive ? 'text-white bg-white/10' : 'text-gray-500 hover:text-white'}`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={`shrink-0 transition-colors ${isActive ? 'text-[#E65100]' : ''}`}
+                        aria-hidden="true"
+                      >
+                        {item.icon}
+                      </span>
+                      {isSidebarOpen && (
+                        <span className="font-bold text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
+                          {item.name}
+                        </span>
+                      )}
+                      {isActive && (
+                        <motion.div
+                          layoutId="patron-pill"
+                          className="absolute inset-0 bg-white/5 rounded-2xl -z-10"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </>
                   )}
-                  {isActive && (
-                    <motion.div
-                      layoutId="patron-pill"
-                      className="absolute inset-0 bg-white/5 rounded-2xl -z-10"
-                    />
-                  )}
-                </>
-              )}
-            </NavLink>
-          ))}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
         </nav>
 
         {/* Sidebar Footer */}
@@ -172,8 +216,9 @@ const DashboardLayout = () => {
           <Link
             to="/"
             className="flex items-center gap-4 p-4 text-gray-500 hover:text-[#E65100] transition-all group"
+            aria-label="Back to main website"
           >
-            <Home size={20} className="shrink-0 -ml-3" />
+            <Home size={20} className="shrink-0 -ml-3" aria-hidden="true" />
             {isSidebarOpen && (
               <span className="font-bold text-[10px] uppercase tracking-[0.2em]">
                 Back to Home
@@ -181,10 +226,12 @@ const DashboardLayout = () => {
             )}
           </Link>
           <button
+            type="button"
             onClick={handleSignOut}
             className="flex items-center gap-4 p-4 text-red-400/70 hover:text-red-400 rounded-2xl transition-all w-full"
+            aria-label="Sign out from your account"
           >
-            <LogOut size={20} className="shrink-0 -ml-3" />
+            <LogOut size={20} className="shrink-0 -ml-3" aria-hidden="true" />
             {isSidebarOpen && (
               <span className="font-bold text-[10px] uppercase tracking-[0.2em]">
                 Sign Out
@@ -198,35 +245,41 @@ const DashboardLayout = () => {
       <div
         className={`flex-1 flex flex-col transition-all duration-500 ${isSidebarOpen && window.innerWidth > 1024 ? 'lg:ml-[310px]' : 'lg:ml-[115px]'}`}
       >
-        <header className="h-24 px-6 lg:px-10 flex items-center justify-between sticky top-0 bg-[#fcf9f5]/80 backdrop-blur-md z-50">
+        <header className="h-24 px-6 lg:px-10 flex items-center justify-between sticky top-0 bg-[#fcf9f5]/80 backdrop-blur-md z-50 border-b border-black/[0.03]">
           <div className="flex items-center gap-4">
             <button
+              type="button"
               onClick={() => setSidebarOpen(!isSidebarOpen)}
-              className="p-3 bg-white border border-black/5 rounded-2xl shadow-sm text-[#1a1a1a]"
+              className="p-3 bg-white border border-black/5 rounded-2xl shadow-sm text-[#1a1a1a] hover:text-[#E65100] transition-colors"
+              aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+              aria-expanded={isSidebarOpen}
             >
               {isSidebarOpen && window.innerWidth <= 1024 ? (
-                <X size={20} />
+                <X size={20} aria-hidden="true" />
               ) : (
-                <Menu size={20} />
+                <Menu size={20} aria-hidden="true" />
               )}
             </button>
-            <h2 className="hidden xl:block text-xl font-black text-[#1a1a1a] tracking-tighter uppercase italic">
+            <h1 className="hidden xl:block text-xl font-black text-[#1a1a1a] tracking-tighter uppercase italic">
               Patron <span className="text-[#E65100] not-italic">Suite.</span>
-            </h2>
+            </h1>
           </div>
 
           <div className="flex items-center gap-4 lg:gap-6">
-            {/* --- ✅ নতুন অ্যাডমিন বাটন (শুধুমাত্র অ্যাডমিনরা দেখবে) --- */}
+            {/* Admin Panel Button */}
             {isAdmin && (
-              <Link to="/admin">
+              <Link to="/admin" title="Go to Admin Control Panel">
                 <motion.button
+                  type="button"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 px-5 py-2.5 bg-[#1a1a1a] text-white rounded-2xl shadow-xl hover:bg-[#E65100] transition-all group"
+                  aria-label="Switch to Admin Panel"
                 >
                   <ArrowRightLeft
                     size={14}
                     className="text-[#E65100] group-hover:text-white transition-colors"
+                    aria-hidden="true"
                   />
                   <span className="text-[9px] font-black uppercase tracking-widest">
                     Admin Panel
@@ -237,22 +290,34 @@ const DashboardLayout = () => {
 
             {/* Notification Bell */}
             <button
+              type="button"
               onClick={() => setIsNotifOpen(!isNotifOpen)}
               className="p-3 bg-white rounded-2xl border border-black/5 text-gray-400 hover:text-[#E65100] relative shadow-sm transition-all"
+              aria-label={`Notifications, ${notifications.length} new`}
             >
-              <Bell size={20} />
+              <Bell size={20} aria-hidden="true" />
               {notifications.length > 0 && (
-                <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white animate-bounce" />
+                <span
+                  className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white animate-bounce"
+                  aria-hidden="true"
+                />
               )}
             </button>
 
-            <div className="h-10 w-[1px] bg-black/5 hidden sm:block" />
+            <div
+              className="h-10 w-[1px] bg-black/5 hidden sm:block"
+              aria-hidden="true"
+            />
 
             {/* Profile Info */}
-            <div className="flex items-center gap-4">
+            <div
+              className="flex items-center gap-4"
+              role="region"
+              aria-label="User profile summary"
+            >
               <div className="text-right hidden sm:block">
                 <div className="flex items-center justify-end gap-1 text-[#E65100] mb-0.5">
-                  <Zap size={10} fill="currentColor" />
+                  <Zap size={10} fill="currentColor" aria-hidden="true" />
                   <p className="text-[9px] font-black uppercase tracking-tighter">
                     Verified Patron
                   </p>
@@ -269,15 +334,30 @@ const DashboardLayout = () => {
                     'https://i.pravatar.cc/150'
                   }
                   className="w-full h-full object-cover rounded-lg group-hover:scale-110 transition-transform duration-500"
-                  alt="avatar"
+                  alt={`${profile?.full_name || 'User'}'s avatar`}
+                  width="48"
+                  height="48"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
             </div>
           </div>
         </header>
 
-        <main className="p-6 lg:p-10 pt-2 lg:pt-0">
-          <Outlet />
+        {/* Dynamic Content Area */}
+        <main className="p-6 lg:p-10 pt-2 lg:pt-0" id="main-content">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={window.location.pathname}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
