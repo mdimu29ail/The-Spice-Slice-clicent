@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, useScroll, useSpring } from 'framer-motion';
 import { supabase } from '../supabase/supabaseClient';
 import Banner from '../Banner/Banner';
 import MainSection from '../MainSection/MainSection';
@@ -7,38 +7,29 @@ import Goals from '../Goals/Goals';
 import MapComponent from '../MapComponent/MapComponent';
 import MenuSection from '../MenuSection/MenuSection';
 import ChefsSection from '../ChefsSection/ChefsSection';
-import Loading from '../Loading/Loading';
-import Panna from '../Banner/Panna'; // আপনার ডেকোরেটিভ এলিমেন্ট
 import PatronReviews from './PatronReviews';
 import SpiceStory from './SpiceStory';
 import VIPClub from './VIPClub';
 
 const Home = () => {
-  const [foods, setFoods] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [foods, setFoods] = useState([]); // ডিফল্ট খালি অ্যারে
   const [error, setError] = useState(null);
 
-  // --- 1. ADVANCED SCROLL ANIMATIONS ---
+  // --- SCROLL PROGRESS BAR ---
   const { scrollYProgress } = useScroll();
-
-  // Smooth Progress Bar
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001,
   });
 
-  // Parallax effect for background elements
-  const y1 = useTransform(scrollYProgress, [0, 1], [0, -200]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [0, 200]);
-
   useEffect(() => {
     const fetchFoodsFromSupabase = async () => {
       try {
-        setLoading(true);
         const { data, error: supabaseError } = await supabase
           .from('foods')
           .select('*')
+          .eq('is_approved', true)
           .order('purchase_count', { ascending: false });
 
         if (supabaseError) throw supabaseError;
@@ -46,97 +37,71 @@ const Home = () => {
       } catch (err) {
         console.error('Supabase Error:', err.message);
         setError(err.message);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchFoodsFromSupabase();
   }, []);
 
-  if (loading) return <Loading />;
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="bg-[#fcf9f5] min-h-screen relative overflow-hidden transition-colors duration-700 selection:bg-orange-200"
+      className="bg-[#fcf9f5] min-h-screen relative overflow-hidden transition-colors duration-700"
     >
-      {/* --- FLOATING DECORATIVE BACKGROUND --- */}
-
-      {/* --- TOP SCROLL PROGRESS BAR --- */}
+      {/* --- TOP PROGRESS BAR --- */}
       <motion.div
-        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#E65100] to-orange-400 origin-left z-[70] shadow-lg"
+        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#E65100] to-orange-400 origin-left z-[100] shadow-lg"
         style={{ scaleX }}
       />
 
-      {/* --- 1. HERO BANNER --- */}
+      {/* --- 1. HERO BANNER (সাথে সাথে দেখা যাবে) --- */}
       <Banner />
 
       {/* --- MAIN CONTENT CONTAINER --- */}
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 space-y-40 py-32 relative z-10">
-        {/* --- 2. SIGNATURE FOODS (MAIN SECTION) --- */}
+        {/* --- 2. SIGNATURE FOODS (শুধু এই অংশে ডাটা আসলে দেখাবে) --- */}
         <section>
-          {error ? (
+          {foods.length > 0 ? (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              className="text-center py-24 bg-white/50 backdrop-blur-md rounded-[4rem] border border-red-100 shadow-xl"
-            >
-              <p className="text-red-500 font-black tracking-tighter text-2xl italic uppercase">
-                Collection Interrupted.
-              </p>
-              <p className="text-gray-400 text-sm mt-2">{error}</p>
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 100 }}
+              initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-100px' }}
-              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 1 }}
             >
               <MainSection foods={foods} />
             </motion.div>
+          ) : (
+            // যদি ডাটা লোড হতে সময় নেয়, তবে একটি ছোট সুন্দর টেক্সট বা গ্যাপ থাকবে
+            <div className="h-20 flex items-center justify-center">
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-300 animate-pulse">
+                Authenticating Masterpieces...
+              </p>
+            </div>
           )}
         </section>
 
-        {/* --- 3. BOUTIQUE GOALS --- */}
+        {/* --- 3. বাকি সব সেকশন (সাথে সাথে রেন্ডার হবে) --- */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="bg-white/30 backdrop-blur-2xl rounded-[5rem] p-16 border border-white/40 shadow-sm relative overflow-hidden"
         >
-          {/* Subtle Inner Glow */}
-          <div className="absolute -top-24 -left-24 w-64 h-64 bg-orange-100 rounded-full blur-[100px] opacity-50" />
           <Goals />
         </motion.div>
 
-        {/* --- 4. THE MENU MASTERLIST --- */}
-        <motion.div
-          initial={{ opacity: 0, y: 80 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <MenuSection />
-        </motion.div>
+        <SpiceStory />
 
-        {/* --- 5. ARTISANAL CHEFS --- */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1 }}
-        >
-          <ChefsSection />
-        </motion.div>
+        <MenuSection />
 
-        {/* --- 6. BOUTIQUE LOCATION (MAP) --- */}
+        <VIPClub />
+
+        <ChefsSection />
+
+        <PatronReviews />
+
         <motion.div
-          initial={{ opacity: 0, y: 120 }}
+          initial={{ opacity: 0, y: 100 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="relative group p-4 bg-white rounded-[4rem] shadow-2xl border border-black/5"
@@ -144,22 +109,15 @@ const Home = () => {
           <div className="rounded-[3rem] overflow-hidden">
             <MapComponent />
           </div>
-          {/* Map Label Overlay */}
-          <div className="absolute bottom-10 left-10 bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-xl hidden md:block border border-orange-50">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#E65100]">
-              Visit the Boutique
-            </p>
-            <p className="text-sm font-black text-[#1a1a1a]">
-              Dhaka, Bangladesh
-            </p>
-          </div>
         </motion.div>
       </div>
 
-      {/* --- 7. LARGE DECORATIVE FOOTER BRANDING --- */}
-      <PatronReviews />
-      <SpiceStory />
-      <VIPClub />
+      {/* Footer Decoration */}
+      <div className="text-center pb-20 opacity-[0.03] select-none pointer-events-none">
+        <h2 className="text-[15vw] font-black italic uppercase leading-none">
+          Spice Slice.
+        </h2>
+      </div>
     </motion.div>
   );
 };

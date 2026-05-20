@@ -240,7 +240,7 @@ const NavBar = () => {
                   <li>
                     <Link
                       to="/dashboard"
-                      className="flex items-center gap-3 py-3 font-bold dark:text-white"
+                      className="flex items-center gap-3 py-3 font-bold"
                     >
                       <LayoutDashboard size={18} /> User Dashboard
                     </Link>
