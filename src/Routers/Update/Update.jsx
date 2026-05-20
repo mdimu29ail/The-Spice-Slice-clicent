@@ -85,7 +85,7 @@ const Update = () => {
         background: '#fcf9f5',
         customClass: { popup: 'rounded-[3rem]' },
       });
-      navigate('/dashboard/myFoods');
+      navigate('/admin/manage-foods');
     } catch (error) {
       Swal.fire('Update Failed', error.message, 'error');
     } finally {

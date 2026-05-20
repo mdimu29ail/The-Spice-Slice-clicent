@@ -134,6 +134,7 @@ const AdminLayout = () => {
       path: '/admin/add-food',
       icon: <PlusCircle size={20} />,
     },
+
     {
       name: 'Add Reviews',
       path: '/admin/add-review',
@@ -154,8 +155,16 @@ const AdminLayout = () => {
       path: '/admin/payments',
       icon: <CreditCard size={20} />,
     },
-    { name: 'Patrons', path: '/admin/users', icon: <Users size={20} /> },
-    { name: 'Analytics', path: '/admin/stats', icon: <BarChart3 size={20} /> },
+    {
+      name: 'Patrons',
+      path: '/admin/users',
+      icon: <Users size={20} />,
+    },
+    {
+      name: 'Analytics',
+      path: '/admin/stats',
+      icon: <BarChart3 size={20} />,
+    },
     {
       name: 'Manage Location',
       path: '/admin/manage-location',

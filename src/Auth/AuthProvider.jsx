@@ -7,32 +7,55 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // অ্যাডমিন চেক লজিক
-  const checkAdminStatus = email => {
-    const adminEmails = ['drdanger219@gmail.com']; // আপনার ইমেইল এখানে দিন
-    setIsAdmin(adminEmails.includes(email));
+  // --- ১. অ্যাডমিন রোল চেক (Database Driven) ---
+  const fetchUserRole = async (userId, email) => {
+    try {
+      // প্রথমে হার্ডকোড চেক (আপনার ইমেইল)
+      if (email === 'mdimu29@gmail.com') {
+        setIsAdmin(true);
+        return;
+      }
+
+      // প্রোফাইল টেবিল থেকে রোল চেক
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data?.role === 'admin') {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    } catch (err) {
+      setIsAdmin(false);
+    }
   };
 
   useEffect(() => {
-    // বর্তমান সেশন চেক
+    // ২. বর্তমান সেশন এবং রোল ইনিশিয়ালাইজ করা
     const initAuth = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      if (session?.user) checkAdminStatus(session.user.email);
+      if (session?.user) {
+        setUser(session.user);
+        await fetchUserRole(session.user.id, session.user.email);
+      }
       setLoading(false);
     };
     initAuth();
 
-    // সেশন চেঞ্জ লিসেনার
+    // ৩. সেশন চেঞ্জ লিসেনার (Real-time Sync)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        checkAdminStatus(session.user.email);
+        setUser(session.user);
+        await fetchUserRole(session.user.id, session.user.email);
       } else {
+        setUser(null);
         setIsAdmin(false);
       }
       setLoading(false);
@@ -41,8 +64,7 @@ const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- নতুন ইউজার তৈরি (Sign Up) ---
-  // createUser ফাংশনটি এভাবে পরিবর্তন করুন
+  // --- ৪. নতুন ইউজার তৈরি (Metadata সহ) ---
   const createUser = async (email, password, name) => {
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
@@ -50,7 +72,7 @@ const AuthProvider = ({ children }) => {
       password,
       options: {
         data: {
-          full_name: name, // একসাথেই নাম পাঠিয়ে দিচ্ছি
+          full_name: name,
           display_name: name,
           avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${name}`,
         },
@@ -64,16 +86,7 @@ const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // --- প্রোফাইল আপডেট (যেমন: নাম বা ছবি সেট করা) ---
-  const updateUserProfile = async profileData => {
-    const { data, error } = await supabase.auth.updateUser({
-      data: profileData, // metadata হিসেবে নাম এবং ছবি সেভ হবে
-    });
-    if (error) throw error;
-    return data;
-  };
-
-  // লগইন ফাংশন
+  // --- ৫. লগইন ফাংশন ---
   const logIn = async (email, password) => {
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -87,16 +100,19 @@ const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // গুগল লগইন
+  // --- ৬. গুগল লগইন ---
   const signinWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: window.location.origin, // ডেপলয়মেন্টের পর এটি কাজ করবে
+      },
     });
     if (error) throw error;
     return data;
   };
 
-  // লগআউট
+  // --- ৭. লগআউট ---
   const logOut = async () => {
     setLoading(true);
     await supabase.auth.signOut();
@@ -106,8 +122,7 @@ const AuthProvider = ({ children }) => {
     user,
     isAdmin,
     loading,
-    createUser, // এটিই Register.jsx খুঁজছে
-    updateUserProfile, // এটি নাম সেভ করার জন্য
+    createUser,
     logIn,
     signinWithGoogle,
     logOut,

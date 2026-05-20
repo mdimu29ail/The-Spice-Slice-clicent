@@ -107,7 +107,7 @@ const router = createBrowserRouter([
       { path: 'manage-foods', element: <ManageFoods /> },
       { path: 'add-food', element: <AddFoods /> },
 
-      { path: 'add-reviews', element: <AddReview /> },
+      { path: 'add-review', element: <AddReview /> },
       { path: 'manage-location', element: <ManageLocation /> },
       { path: 'update-food/:id', element: <Update /> },
       { path: 'manage-orders', element: <ManageOrders /> },

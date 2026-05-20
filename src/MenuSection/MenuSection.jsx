@@ -7,21 +7,18 @@ import {
   Diamond,
   ChevronRight,
   Zap,
-  Pizza,
-  Coffee,
-  Ham,
   UtensilsCrossed,
+  Camera,
 } from 'lucide-react';
 import Loading from '../Loading/Loading';
 import { useNavigate } from 'react-router-dom';
 
 const MenuSection = () => {
   const [menuItems, setMenuItems] = useState([]);
-  const [activeTab, setActiveTab] = useState('All Masterpieces'); // ✅ ডিফল্ট এখন 'All'
+  const [activeTab, setActiveTab] = useState('All Masterpieces');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // --- সব ক্যাটাগরি এবং ফিল্টার ট্যাব ---
   const tabs = [
     {
       name: 'All Masterpieces',
@@ -49,18 +46,12 @@ const MenuSection = () => {
     fetchMenuData();
   }, []);
 
-  // --- উন্নত ফিল্টারিং লজিক ---
   const getFilteredItems = () => {
     const currentTab = tabs.find(t => t.name === activeTab);
-
     if (currentTab.filter === 'all') return menuItems;
-
-    // যদি টাইপ 'category' হয় তবে ডাটাবেসের 'category' কলামে চেক করবে
     if (currentTab.type === 'category') {
       return menuItems.filter(item => item.category === currentTab.filter);
     }
-
-    // অন্যথায় স্পেশাল ট্যাগগুলোতে চেক করবে (is_spicy, is_premium ইত্যাদি)
     return menuItems.filter(item => item[currentTab.filter] === true);
   };
 
@@ -74,8 +65,8 @@ const MenuSection = () => {
     );
 
   return (
-    <section className="py-24 bg-[#fcf9f5] relative overflow-hidden">
-      {/* Background Decor Watermark */}
+    <section className="py-24 bg-[#fcf9f5] relative overflow-hidden font-sans">
+      {/* Background Decor */}
       <div className="absolute top-10 left-10 opacity-[0.02] pointer-events-none select-none">
         <h2 className="text-[12vw] font-black leading-none uppercase italic text-[#1a1a1a]">
           Archive
@@ -92,29 +83,30 @@ const MenuSection = () => {
           >
             <Zap size={14} className="text-[#E65100] fill-[#E65100]" />
             <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#E65100]">
-              The Full Selection
+              Boutique Selection
             </span>
           </motion.div>
           <h2 className="text-5xl lg:text-7xl font-black text-[#1a1a1a] tracking-tighter italic uppercase leading-none">
-            Boutique <span className="text-[#E65100] not-italic">Menu.</span>
+            Signature{' '}
+            <span className="text-[#E65100] not-italic">Treasures.</span>
           </h2>
         </div>
 
-        {/* --- LUXURY TAB NAVIGATION (Scrolling Support) --- */}
+        {/* --- LUXURY TAB NAVIGATION --- */}
         <div className="flex justify-center mb-20 overflow-x-auto pb-6 no-scrollbar">
-          <div className="flex bg-white/80 backdrop-blur-xl p-2 rounded-[2.5rem] border border-black/5 shadow-2xl min-w-max">
+          <div className="flex bg-white/80 backdrop-blur-xl p-2 rounded-[2rem] border border-black/5 shadow-2xl min-w-max">
             {tabs.map(tab => (
               <button
                 key={tab.name}
                 onClick={() => setActiveTab(tab.name)}
-                className={`relative px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all duration-500 rounded-full flex items-center gap-2
+                className={`relative px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all duration-500 rounded-full
                   ${activeTab === tab.name ? 'text-white' : 'text-gray-400 hover:text-black'}
                 `}
               >
                 <span className="relative z-10">{tab.name}</span>
                 {activeTab === tab.name && (
                   <motion.div
-                    layoutId="luxuryTabPill"
+                    layoutId="menuTabPill"
                     className="absolute inset-0 bg-[#1a1a1a] rounded-full shadow-lg"
                     transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                   />
@@ -125,7 +117,7 @@ const MenuSection = () => {
         </div>
 
         {/* --- MENU LIST GRID --- */}
-        <div className="min-h-[50px]">
+        <div className="min-h-[400px]">
           <AnimatePresence mode="wait">
             {filteredItems.length > 0 ? (
               <motion.div
@@ -133,8 +125,7 @@ const MenuSection = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.5 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12"
+                className="grid grid-cols-1 md:grid-cols-2 gap-x-12 lg:gap-x-20 gap-y-12"
               >
                 {filteredItems.map((item, index) => (
                   <motion.div
@@ -142,44 +133,65 @@ const MenuSection = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.03 }}
-                    className="group flex justify-between items-start border-b border-black/5 pb-8 hover:border-[#E65100]/30 transition-all cursor-pointer"
+                    onClick={() => navigate(`/foods/${item.id}`)}
+                    className="group flex gap-6 items-center border-b border-black/5 pb-8 hover:border-[#E65100]/30 transition-all cursor-pointer"
                   >
-                    <div className="flex-1 pr-6">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-black text-[#1a1a1a] uppercase tracking-tight group-hover:text-[#E65100] transition-colors leading-none">
-                          {item.name}
-                        </h3>
-                        {item.is_spicy && (
-                          <Flame
-                            size={14}
-                            className="text-red-500 fill-red-500 animate-pulse"
-                          />
-                        )}
-                        {item.is_signature && (
-                          <div className="w-1.5 h-1.5 bg-[#E65100] rounded-full" />
-                        )}
-                      </div>
-                      <p className="text-gray-400 text-[10px] font-bold leading-relaxed italic uppercase tracking-wider line-clamp-1">
-                        {item.description ||
-                          'Artisanal preparation with boutique spices.'}
-                      </p>
+                    {/* --- SMALL BOUTIQUE IMAGE --- */}
+                    <div className="relative w-20 h-20 lg:w-24 lg:h-24 shrink-0 overflow-hidden rounded-[1.5rem] border-4 border-white shadow-xl group-hover:rotate-3 transition-transform duration-500">
+                      <img
+                        src={item.image_url}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        alt={item.name}
+                      />
+                      <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                     </div>
 
-                    <div className="flex flex-col items-end shrink-0">
-                      <div className="flex items-center gap-2">
-                        {item.old_price_usd && (
-                          <span className="text-[10px] text-gray-300 line-through font-bold tracking-tighter italic">
-                            ${item.old_price_usd}
+                    {/* --- CONTENT AREA --- */}
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="flex items-center gap-3 mb-1">
+                            <h3 className="text-xl font-black text-[#1a1a1a] uppercase tracking-tight group-hover:text-[#E65100] transition-colors leading-none">
+                              {item.name}
+                            </h3>
+                            {item.is_spicy && (
+                              <Flame
+                                size={14}
+                                className="text-red-500 fill-red-500 animate-pulse"
+                              />
+                            )}
+                          </div>
+                          <p className="text-gray-400 text-[10px] font-bold leading-relaxed italic uppercase tracking-wider line-clamp-1">
+                            {item.description ||
+                              'Artisanal preparation with boutique spices.'}
+                          </p>
+                        </div>
+
+                        {/* Price Area */}
+                        <div className="flex flex-col items-end shrink-0">
+                          <span className="text-xl font-black text-[#1a1a1a] tracking-tighter italic">
+                            ${item.price_usd}
+                          </span>
+                          {item.old_price_usd && (
+                            <span className="text-[10px] text-gray-300 line-through font-bold italic tracking-tighter">
+                              ${item.old_price_usd}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Tags Bar */}
+                      <div className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        {item.is_signature && (
+                          <span className="text-[8px] font-black uppercase text-[#E65100] tracking-widest border border-[#E65100]/20 px-2 py-0.5 rounded-md">
+                            Signature
                           </span>
                         )}
-                        <span className="text-2xl font-black text-[#1a1a1a] tracking-tighter italic leading-none">
-                          ${item.price_usd}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-[#E65100] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em]">
-                          {item.category}
-                        </span>
+                        {item.is_premium && (
+                          <span className="text-[8px] font-black uppercase text-blue-500 tracking-widest border border-blue-100 px-2 py-0.5 rounded-md">
+                            Premium
+                          </span>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -187,7 +199,6 @@ const MenuSection = () => {
               </motion.div>
             ) : (
               <motion.div
-                key="empty"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="flex flex-col items-center justify-center py-32 opacity-20"
@@ -202,24 +213,19 @@ const MenuSection = () => {
         </div>
 
         {/* --- VIEW ALL ACTION --- */}
-        <div className="mt-24 flex flex-col items-center gap-6">
+        <div className="mt-24 flex justify-center">
           <motion.button
             onClick={() => navigate('/allFoods')}
             whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="group flex items-center gap-6 bg-[#1a1a1a] text-white px-12 py-6 rounded-full shadow-2xl hover:bg-[#E65100] transition-all duration-500"
+            className="group flex items-center gap-6 bg-[#1a1a1a] text-white px-10 py-5 rounded-full shadow-2xl hover:bg-[#E65100] transition-all"
           >
-            <div className="text-left">
-              <p className="text-[11px] font-black uppercase tracking-[0.4em]">
-                Browse Archive
-              </p>
-              <p className="text-[9px] font-bold text-gray-400 group-hover:text-white transition-colors uppercase tracking-widest">
-                Full Boutique Experience
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-              <ChevronRight size={20} />
-            </div>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">
+              Explore Full Archive
+            </span>
+            <ChevronRight
+              size={18}
+              className="group-hover:translate-x-2 transition-transform"
+            />
           </motion.button>
         </div>
       </div>
